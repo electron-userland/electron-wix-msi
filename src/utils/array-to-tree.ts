@@ -53,7 +53,8 @@ export function isDirectChild(parent: string, possibleChild: string): boolean {
  * @returns {boolean}
  */
 export function isChild(parent: string, possibleChild: string): boolean {
-  return possibleChild.startsWith(parent) && parent !== possibleChild;
+  return possibleChild.startsWith(parent) && parent !== possibleChild
+           && possibleChild[parent.length] === separator;
 }
 
 /**
