@@ -342,8 +342,6 @@ test('MSICreator create() creates x86 version explicitly', async () => {
 
   const { wxsFile } = await msiCreator.create();
   wxsContent = await fs.readFile(wxsFile, 'utf-8');
-  console.log(wxsFile);
-  console.log(wxsContent);
   expect(wxsFile).toBeTruthy();
 });
 testIncludes('32 bit package declaration', 'Platform="x86"');
@@ -355,8 +353,6 @@ test('MSICreator create() creates x64 version', async () => {
 
   const { wxsFile } = await msiCreator.create();
   wxsContent = await fs.readFile(wxsFile, 'utf-8');
-  console.log(wxsFile);
-  console.log(wxsContent);
   expect(wxsFile).toBeTruthy();
 });
 testIncludes('32 bit package declaration', 'Platform="x64"');
@@ -368,8 +364,6 @@ test('MSICreator create() creates ia64 version', async () => {
 
   const { wxsFile } = await msiCreator.create();
   wxsContent = await fs.readFile(wxsFile, 'utf-8');
-  console.log(wxsFile);
-  console.log(wxsContent);
   expect(wxsFile).toBeTruthy();
 });
 testIncludes('32 bit package declaration', 'Platform="ia64"');
@@ -381,8 +375,6 @@ test('MSICreator create() shortcut name override', async () => {
 
   const { wxsFile } = await msiCreator.create();
   wxsContent = await fs.readFile(wxsFile, 'utf-8');
-  console.log(wxsFile);
-  console.log(wxsContent);
   expect(wxsFile).toBeTruthy();
 });
 testIncludes('Custom shortcut name', '<Shortcut Id="ApplicationStartMenuShortcut" Name="BeepBeep"');
