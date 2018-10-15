@@ -22,10 +22,16 @@ export function getDirectoryStructure(root: string): Promise <{ files: Array<str
     // testing with mock-fs.
     klaw(root, { fs: gfs })
       .on('data', (item) => {
-        if (item.stats.isFile()) {
-          files.push(item.path);
-        } else if (item.stats.isDirectory() && item.path !== root) {
-          directories.push(item.path);
+        if (item.path.includes(".asar")) {
+            let strPos = item.path.indexOf(".asar");
+            let itemPath = item.path.substring(0, strPos + 5);
+            if (!files.includes(itemPath)) files.push(itemPath);
+        } else {
+            if (item.stats.isFile()) {
+                files.push(item.path);
+            } else if (item.stats.isDirectory() && item.path !== root) {
+                directories.push(item.path);
+            }
         }
       })
       .on('end', () => resolve({ files, directories }));
