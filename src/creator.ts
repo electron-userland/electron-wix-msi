@@ -196,6 +196,7 @@ export class MSICreator {
       '{{ApplicationDescription}}': this.description,
       '{{ApplicationName}}': this.name,
       '{{ApplicationShortcutGuid}}': uuid(),
+      '{{DesktopShortcutGuid}}': uuid(),
       '{{ApplicationShortName}}': this.shortName,
       '{{AppUserModelId}}': this.appUserModelId,
       '{{Language}}': this.language.toString(10),

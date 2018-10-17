@@ -1,71 +1,92 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/product.html -->
-  <Product Id="*" UpgradeCode="{{UpgradeCode}}"
-          Name="{{ApplicationName}}"
-          Version="{{Version}}"
-          Manufacturer="{{Manufacturer}}"
-          Language="{{Language}}">
-    <!-- Only run this installer on Windows 7 or up (or if it's already installed, I guess) -->
-    <!-- <Condition Message="This application is only supported on Windows 7 or higher.">
-      <![CDATA[Installed OR (VersionNT >= 601)]]>
-    </Condition> -->
-    <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/package.html -->
-    <Package InstallerVersion="405"
-             Compressed="yes"
-             InstallScope="perMachine"
-             Comments="Windows Installer Package"
-             Platform="{{Platform}}"/>
-    <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
+    <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/product.html -->
+    <Product Id="*" UpgradeCode="{{UpgradeCode}}"
+             Name="{{ApplicationName}}"
+             Version="{{Version}}"
+             Manufacturer="{{Manufacturer}}"
+             Language="{{Language}}">
+        <!-- Only run this installer on Windows 7 or up (or if it's already installed, I guess) -->
+        <!-- <Condition Message="This application is only supported on Windows 7 or higher.">
+          <![CDATA[Installed OR (VersionNT >= 601)]]>
+        </Condition> -->
+        <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/package.html -->
+        <Package InstallerVersion="405"
+                 Compressed="yes"
+                 InstallScope="perMachine"
+                 Comments="Windows Installer Package"
+                 Platform="{{Platform}}"/>
+        <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
 
-    <!-- Handle Updates -->
-    <Upgrade Id="{{UpgradeCode}}">
-      <UpgradeVersion OnlyDetect="no" Property="PREVIOUSFOUND"
-          Minimum="0.0.0" IncludeMinimum="yes"
-          Maximum="{{Version}}" IncludeMaximum="no" />
-    </Upgrade>
+        <!-- Handle Updates -->
+        <Upgrade Id="{{UpgradeCode}}">
+            <UpgradeVersion OnlyDetect="no" Property="PREVIOUSFOUND"
+                            Minimum="0.0.0" IncludeMinimum="yes"
+                            Maximum="{{Version}}" IncludeMaximum="no" />
+        </Upgrade>
 
-    <InstallExecuteSequence>
-      <RemoveExistingProducts After="InstallInitialize" />
-    </InstallExecuteSequence>
+        <InstallExecuteSequence>
+            <RemoveExistingProducts After="InstallInitialize" />
+        </InstallExecuteSequence>
 
-<!-- {{UI}} -->
+        <!-- {{UI}} -->
 
-    <!-- Step 2: Add files and directories -->
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <!-- Installation files to %PROGRAMFILES% -->
-      <Directory Id="{{ProgramFilesFolder}}">
-<!-- {{Directories}} -->
-      </Directory>
-      <!-- Start Menu -->
-      <Directory Id="ProgramMenuFolder">
-        <Directory Id="ApplicationProgramsFolder" Name="{{ShortcutFolderName}}"/>
-      </Directory>
-    </Directory>
+        <!-- Step 2: Add files and directories -->
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <!-- Installation files to %PROGRAMFILES% -->
+            <Directory Id="{{ProgramFilesFolder}}">
+                <!-- {{Directories}} -->
+            </Directory>
 
-    <!-- Step 3: Add app to Start Menu -->
-    <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="ApplicationShortcut" Guid="{{ApplicationShortcutGuid}}" Win64='{{Win64YesNo}}'>
-        <Shortcut Id="ApplicationStartMenuShortcut"
-                  Name="{{ShortcutName}}"
-                  Description="{{ApplicationDescription}}"
-                  Target="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe"
-                  WorkingDirectory="APPLICATIONROOTDIRECTORY">
-          <ShortcutProperty Key="System.AppUserModel.ID" Value="{{AppUserModelId}}" />
-        </Shortcut>
-        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
-        <RegistryValue Root="HKCU"
-                       Key="Software\Microsoft\{{ApplicationShortName}}"
-                       Name="installed"
-                       Type="integer"
-                       Value="1"
-                       KeyPath="yes"/>
-      </Component>
-    </DirectoryRef>
+            <!-- Desktop -->
+            <Directory Id="DesktopFolder" Name="Desktop" />
 
-    <!-- Step 4: Tell WiX to install the files -->
-    <Feature Id="MainApplication" Title="Main Application" Level="1">
-<!-- {{ComponentRefs}} -->
-      <ComponentRef Id="ApplicationShortcut" />
-    </Feature>
-  </Product>
+            <!-- Start Menu -->
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="{{ShortcutFolderName}}"/>
+            </Directory>
+        </Directory>
+
+        <!-- Step 3: Add app to Start Menu -->
+        <DirectoryRef Id="ApplicationProgramsFolder">
+            <Component Id="ApplicationShortcut" Guid="{{ApplicationShortcutGuid}}" Win64='{{Win64YesNo}}'>
+                <Shortcut Id="ApplicationStartMenuShortcut"
+                          Name="{{ShortcutName}}"
+                          Description="{{ApplicationDescription}}"
+                          Target="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe"
+                          WorkingDirectory="APPLICATIONROOTDIRECTORY">
+                    <ShortcutProperty Key="System.AppUserModel.ID" Value="{{AppUserModelId}}" />
+                </Shortcut>
+                <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+                <RegistryValue Root="HKCU"
+                               Key="Software\Microsoft\{{ApplicationShortName}}"
+                               Name="installed"
+                               Type="integer"
+                               Value="1"
+                               KeyPath="yes" />
+            </Component>
+        </DirectoryRef>
+
+        <DirectoryRef Id="DesktopFolder">
+            <Component Id="DesktopShortcut" Guid="{{DesktopShortcutGuid}}" >
+                <Shortcut Id="MyDesktopShortcut"
+                          Name="{{ShortcutName}}"
+                          Description="{{ApplicationDescription}}"
+                          Target="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe"
+                          WorkingDirectory="INSTALLFOLDER"/>
+                <RegistryValue Root="HKCU"
+                               Key="Software\Microsoft\{{ApplicationShortName}}"
+                               Name="installed"
+                               Type="integer"
+                               Value="1"
+                               KeyPath="yes" />
+            </Component>
+        </DirectoryRef>
+
+        <!-- Step 4: Tell WiX to install the files -->
+        <Feature Id="MainApplication" Title="Main Application" Level="1">
+            <!-- {{ComponentRefs}} -->
+            <ComponentRef Id="ApplicationShortcut" />
+            <ComponentRef Id="DesktopShortcut" />
+        </Feature>
+    </Product>
 </Wix>
