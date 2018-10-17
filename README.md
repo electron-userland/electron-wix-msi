@@ -50,7 +50,16 @@ const msiCreator = new MSICreator({
   name: 'Kittens',
   manufacturer: 'Kitten Technologies',
   version: '1.1.2',
-  outputDirectory: '/path/to/output/folder'
+  outputDirectory: '/path/to/output/folder',
+  ui: {
+      enabled: true,
+      chooseDirectory: true,
+      images: {
+          background: 'path/to/background.jpg',
+          banner: 'path/to/banner.jpg'
+      }
+  },
+  extensions: ['WixUtilExtension']  // This is required for launch after install
 });
 
 // Step 2: Create a .wxs template file
