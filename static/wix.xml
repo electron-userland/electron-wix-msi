@@ -90,6 +90,7 @@
         </Feature>
 
         <!-- Optional Launch app feature -->
+        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
         <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch {{ApplicationName}}" />
         <Property Id="WixShellExecTarget" Value="[#{{exeComponentID}}]" />
         <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
