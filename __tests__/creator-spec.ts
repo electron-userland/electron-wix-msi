@@ -103,9 +103,9 @@ testIncludes('an ApplicationProgramsFolder', '<Directory Id="ApplicationPrograms
 testIncludes('a default appUserModelId', 'Key="System.AppUserModel.ID" Value="com.squirrel.Acme.acme"');
 
 test('.wxs file has as many components as we have files', () => {
-  // Files + Shortcut
+  // Files + Shortcut + Desktop Shortcut
   const count = wxsContent.split('</Component>').length - 1;
-  expect(count).toEqual(numberOfFiles + 1);
+  expect(count).toEqual(numberOfFiles + 2);
 });
 
 test('MSICreator create() creates Wix file with UI properties', async () => {
