@@ -24,7 +24,7 @@ export function getDirectoryStructure(root: string): Promise <{ files: Array<str
       .on('data', (item) => {
         if (item.path.includes('.asar') && !item.path.includes('.asar.unpacked')) {
             const itemPath = item.path.substring(0, (item.path.indexOf('.asar')) + 5);
-            if (!files.includes(itemPath)) {
+            if (files.indexOf(itemPath) < 0) {
                 files.push(itemPath);
             }
         } else {
