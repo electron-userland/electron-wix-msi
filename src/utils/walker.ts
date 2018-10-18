@@ -22,7 +22,7 @@ export function getDirectoryStructure(root: string): Promise <{ files: Array<str
     // testing with mock-fs.
     klaw(root, { fs: gfs })
       .on('data', (item) => {
-        if (item.path.includes('.asar')) {
+        if (item.path.includes('.asar') && !item.path.includes('.asar.unpacked')) {
             const itemPath = item.path.substring(0, (item.path.indexOf('.asar')) + 5);
             if (!files.includes(itemPath)) {
                 files.push(itemPath);
