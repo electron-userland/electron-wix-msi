@@ -99,10 +99,17 @@ await msiCreator.compile();
 * `signWithParams` (string, optional) - Paramaters to pass to `signtool.exe`.
   Overrides `certificateFile` and `certificatePassword`.
 * `extensions` (array, optional) - Specify WiX extensions to use e.g `['WixUtilExtension', 'C:\My WiX Extensions\FooExtension.dll']`
+* `desktopShortcut` (ShorcutOptions, optoinal) - Enables configuration of desktopShortcuts.
 * `ui` (UIOptions, optional) - Enables configuration of the UI. See below for
   more information.
 * `arch` (string, optional) - Defines the architecure the MSI is build for. Values can
   be either `x86` or `x64`. Default's to `x86` if left undefined.
+
+##### Desktop Shortcut Configuration (Optional)
+
+* `shortcutIconId` (optional, string) Reference Id to `<Icon/>` element in WixUITemplate.
+* `targetFileName` (string, optional) - The application executable name. If none is
+  passed, `exe` will be used.
 
 ##### UI Configuration (Optional)
 

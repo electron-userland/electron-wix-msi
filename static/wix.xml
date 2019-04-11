@@ -9,6 +9,8 @@
     <!-- <Condition Message="This application is only supported on Windows 7 or higher.">
       <![CDATA[Installed OR (VersionNT >= 601)]]>
     </Condition> -->
+
+    
     <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/package.html -->
     <Package InstallerVersion="405"
              Compressed="yes"
@@ -36,22 +38,23 @@
       <Directory Id="{{ProgramFilesFolder}}">
 <!-- {{Directories}} -->
       </Directory>
-      <!>
+      <!-- Desktop -->
+      <Directory Id="DesktopFolder" Name="Desktop" />
       <!-- Start Menu -->
       <Directory Id="ProgramMenuFolder">
         <Directory Id="ApplicationProgramsFolder" Name="{{ShortcutFolderName}}"/>
       </Directory>
-       <Directory Id="DesktopFolder" Name="Desktop" />
+       
     </Directory>
 
-    <!-- Step 3: Add app to Start Menu and Desktop-->
+    <!-- Step 3: Add app to Start Menu and Desktop -->
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="{{ApplicationShortcutGuid}}" Win64='{{Win64YesNo}}'>
         <Shortcut Id="ApplicationStartMenuShortcut"
                   Name="{{ShortcutName}}"
                   Description="{{ApplicationDescription}}"
                   Target="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe"
-                  WorkingDirectory="APPLICATIONROOTDIRECTORY">
+                  WorkingDirectory="APPLICATIONROOTDIRECTORY" {{ShortcutIconAttr}}>
           <ShortcutProperty Key="System.AppUserModel.ID" Value="{{AppUserModelId}}" />
         </Shortcut>
         <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
@@ -70,6 +73,7 @@
     <Feature Id="MainApplication" Title="Main Application" Level="1">
 <!-- {{ComponentRefs}} -->
       <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
     </Feature>
   </Product>
 </Wix>
