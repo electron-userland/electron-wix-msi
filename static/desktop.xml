@@ -1,0 +1,15 @@
+<!-- {{I}} --><DirectoryRef Id="DesktopFolder">
+<!-- {{I}} -->    <Component Id="DesktopShortcut" Guid="{{DesktopShortcutGuid}}" >
+<!-- {{I}} -->        <Shortcut Id="MyDesktopShortcut"
+                                Name="{{ShortcutName}}"
+                                Description="{{ApplicationDescription}}"
+                                Target="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe"
+                                WorkingDirectory="INSTALLFOLDER"/>
+<!-- {{I}} -->        <RegistryValue Root="HKCU"
+                                Key="Software\Microsoft\{{ApplicationShortName}}"
+                                Name="installed"
+                                Type="integer"
+                                Value="1"
+                                KeyPath="yes" />
+<!-- {{I}} -->    </Component>
+<!-- {{I}} --></DirectoryRef>

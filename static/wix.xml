@@ -36,13 +36,15 @@
       <Directory Id="{{ProgramFilesFolder}}">
 <!-- {{Directories}} -->
       </Directory>
+      <!>
       <!-- Start Menu -->
       <Directory Id="ProgramMenuFolder">
         <Directory Id="ApplicationProgramsFolder" Name="{{ShortcutFolderName}}"/>
       </Directory>
+       <Directory Id="DesktopFolder" Name="Desktop" />
     </Directory>
 
-    <!-- Step 3: Add app to Start Menu -->
+    <!-- Step 3: Add app to Start Menu and Desktop-->
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="{{ApplicationShortcutGuid}}" Win64='{{Win64YesNo}}'>
         <Shortcut Id="ApplicationStartMenuShortcut"
@@ -61,6 +63,8 @@
                        KeyPath="yes"/>
       </Component>
     </DirectoryRef>
+
+    <!-- {{Desktop}} -->
 
     <!-- Step 4: Tell WiX to install the files -->
     <Feature Id="MainApplication" Title="Main Application" Level="1">

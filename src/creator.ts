@@ -17,6 +17,7 @@ const debug = require('debug')('electron-wix-msi');
 export interface MSICreatorOptions {
   appDirectory: string;
   appUserModelId?: string;
+  createDesktopShortcut: boolean,
   description: string;
   exe: string;
   extensions?: Array<string>;
@@ -57,6 +58,8 @@ export class MSICreator {
   // Default Templates
   public componentTemplate = getTemplate('component');
   public componentRefTemplate = getTemplate('component-ref');
+  public createDesktopShortcut = false;
+  public desktopTemplate = getTemplate('desktop');
   public directoryTemplate = getTemplate('directory');
   public wixTemplate = getTemplate('wix');
   public uiTemplate = getTemplate('ui');
@@ -98,6 +101,7 @@ export class MSICreator {
     this.appDirectory = path.normalize(options.appDirectory);
     this.certificateFile = options.certificateFile;
     this.certificatePassword = options.certificatePassword;
+    this.createDesktopShortcut = options.createDesktopShortcut;
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, '');
     this.extensions = options.extensions || [];
@@ -189,6 +193,7 @@ export class MSICreator {
     const scaffoldReplacements = {
       '<!-- {{ComponentRefs}} -->': componentRefs.map(({ xml }) => xml).join('\n'),
       '<!-- {{Directories}} -->': directories,
+      '<!-- {{Desktop}} -->': this.getDesktop(),
       '<!-- {{UI}} -->': this.getUI()
     };
 
@@ -199,6 +204,7 @@ export class MSICreator {
       '{{ApplicationShortcutGuid}}': uuid(),
       '{{ApplicationShortName}}': this.shortName,
       '{{AppUserModelId}}': this.appUserModelId,
+      '{{DesktopShortcutGuid}}': uuid(),
       '{{Language}}': this.language.toString(10),
       '{{Manufacturer}}': this.manufacturer,
       '{{ShortcutFolderName}}': this.shortcutFolderName,
@@ -328,6 +334,16 @@ export class MSICreator {
       xml = replaceInString(uiTemplate, {
         '<!-- {{Properties}} -->': propertiesXml
       });
+    }
+
+    return xml;
+  }
+
+  private getDesktop(): string {
+    let xml = '';
+
+    if (this.createDesktopShortcut) {
+      xml = this.desktopTemplate;
     }
 
     return xml;
