@@ -115,6 +115,7 @@ detailed configuration of the UI. It has the following optional properties:
 * `template` (string, optional) - Substitute your own XML that will be inserted
   into the final `.wxs` file before compiling the installer to customize the UI
   options.
+* `localizations` (string[], optional) - Provide an array of paths to `.wxl` files.
 * `chooseDirectory` (boolean, optional) - If set to `true`, the end user will be
   able to choose the installation directory. Set to `false` by default. Without
   effect if a custom `template` is used.

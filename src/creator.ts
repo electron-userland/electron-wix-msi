@@ -41,6 +41,7 @@ export interface UIOptions {
   chooseDirectory?: boolean;
   template?: string;
   images?: UIImages;
+  localizations?: Array<string>;
 }
 
 export interface UIImages {
@@ -256,6 +257,10 @@ export class MSICreator {
 
     const preArgs = flatMap(this.extensions.map((e) => (['-ext', e])));
 
+    if (typeof this.ui === 'object' && this.ui.localizations && this.ui.localizations.length && type === 'msi') {
+      this.ui.localizations.forEach((l) => preArgs.push('-loc', l));
+    }
+
     const { code, stderr, stdout } = await spawnPromise(binary, [ ...preArgs, input ], {
       env: process.env,
       cwd
@@ -316,9 +321,9 @@ export class MSICreator {
     if (typeof this.ui === 'object' && this.ui !== 'null') {
       const { images, template, chooseDirectory } = this.ui;
       const propertiesXml = this.getUIProperties(this.ui);
-      const uiTemplate = template || chooseDirectory
+      const uiTemplate = template || (chooseDirectory
         ? this.uiDirTemplate
-        : this.uiTemplate;
+        : this.uiTemplate);
 
       xml = replaceInString(uiTemplate, {
         '<!-- {{Properties}} -->': propertiesXml
