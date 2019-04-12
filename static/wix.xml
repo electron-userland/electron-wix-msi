@@ -17,6 +17,11 @@
              Platform="{{Platform}}"/>
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
 
+    <!-- Handle Updates -->
+    <Upgrade Id="{{UpgradeCode}}">
+      <UpgradeVersion OnlyDetect="yes" Property="PREVIOUSFOUND" />
+    </Upgrade>
+
     <InstallExecuteSequence>
       <RemoveExistingProducts After="InstallInitialize" />
     </InstallExecuteSequence>
