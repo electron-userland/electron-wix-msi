@@ -316,9 +316,9 @@ export class MSICreator {
     if (typeof this.ui === 'object' && this.ui !== 'null') {
       const { images, template, chooseDirectory } = this.ui;
       const propertiesXml = this.getUIProperties(this.ui);
-      const uiTemplate = template || chooseDirectory
+      const uiTemplate = template || (chooseDirectory
         ? this.uiDirTemplate
-        : this.uiTemplate;
+        : this.uiTemplate);
 
       xml = replaceInString(uiTemplate, {
         '<!-- {{Properties}} -->': propertiesXml
