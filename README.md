@@ -88,6 +88,8 @@ await msiCreator.compile();
 * `upgradeCode` (string, optional) - A unique UUID used by your app to identify
   itself. This module will generate one for you, but it is important to reuse it
   to enable conflict-free upgrades.
+* `cultures` (string, optional) - Specify a specific culture for `light.exe` to
+  build using the culture switch e.g `en-us`.
 * `language` (number, optional) - The
   [Microsoft Windows Language Code identifier](https://msdn.microsoft.com/en-us/library/cc233965.aspx)
   used by the installer. Will use 1033 (English, United-States) if left

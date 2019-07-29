@@ -20,6 +20,7 @@ export interface MSICreatorOptions {
   description: string;
   exe: string;
   extensions?: Array<string>;
+  cultures?: string;
   language?: number;
   manufacturer: string;
   name: string;
@@ -71,6 +72,7 @@ export class MSICreator {
   public description: string;
   public exe: string;
   public extensions: Array<string>;
+  public cultures?: string;
   public language: number;
   public manufacturer: string;
   public name: string;
@@ -100,6 +102,7 @@ export class MSICreator {
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, '');
     this.extensions = options.extensions || [];
+    this.cultures = options.cultures;
     this.language = options.language || 1033;
     this.manufacturer = options.manufacturer;
     this.name = options.name;
@@ -255,6 +258,10 @@ export class MSICreator {
     }
 
     const preArgs = flatMap(this.extensions.map((e) => (['-ext', e])));
+
+    if (type === 'msi' && this.cultures) {
+      preArgs.unshift(`-cultures:${this.cultures}`);
+    }
 
     const { code, stderr, stdout } = await spawnPromise(binary, [ ...preArgs, input ], {
       env: process.env,
