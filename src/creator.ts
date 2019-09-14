@@ -13,6 +13,12 @@ import { getDirectoryStructure } from './utils/walker';
 const getTemplate = (name: string) => fs.readFileSync(path.join(__dirname, `../static/${name}.xml`), 'utf-8');
 const ROOTDIR_NAME = 'APPLICATIONROOTDIRECTORY';
 const debug = require('debug')('electron-wix-msi');
+const lightBinary = process.env.WIX
+  ? path.join(`"${process.env.WIX}"`.replace(/"/g, ''), 'bin', 'light.exe')
+  : '';
+const candleBinary = process.env.WIX
+  ? path.join(`"${process.env.WIX}"`.replace(/"/g, ''), 'bin', 'candle.exe')
+  : '';
 
 export interface MSICreatorOptions {
   appDirectory: string;
@@ -244,8 +250,8 @@ export class MSICreator {
     const cwd = path.dirname(this.wxsFile);
     const expectedObj = path.join(cwd, `${path.basename(this.wxsFile, '.wxs')}.${type}`);
     const binary = type === 'msi'
-      ? 'light.exe'
-      : 'candle.exe';
+      ? lightBinary
+      : candleBinary;
     const input = type === 'msi'
       ? path.join(cwd, `${path.basename(this.wxsFile, '.wxs')}.wixobj`)
       : this.wxsFile;

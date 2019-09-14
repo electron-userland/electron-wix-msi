@@ -1,3 +1,5 @@
+const path = require('path');
+
 export interface HasBinaryResult {
   has: boolean;
   version: string | null;
@@ -9,7 +11,7 @@ export interface HasBinaryResult {
  * @returns {HasBinaryResult}
  */
 export function hasCandle(): HasBinaryResult {
-  return hasBinary('candle -?');
+  return hasBinary(`${path.join(`"${process.env.WIX}"`, 'bin', 'candle.exe')} -?`);
 }
 
 /**
@@ -18,7 +20,7 @@ export function hasCandle(): HasBinaryResult {
  * @returns {HasBinaryResult}
  */
 export function hasLight(): HasBinaryResult {
-  return hasBinary('light -?');
+  return hasBinary(`${path.join(`"${process.env.WIX}"`, 'bin', 'light.exe')} -?`);
 }
 
 /**
@@ -48,6 +50,7 @@ export function hasBinary(cmd: string): HasBinaryResult {
  * @returns {(string | null)}
  */
 function findVersion(input: string): string | null {
+  console.log(input);
   const regex = / version (\d\.\d{1,2}\.\d{1,2}\.\d{1,6})/;
   const matched = input.match(regex);
 
