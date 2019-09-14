@@ -11,7 +11,7 @@ export interface HasBinaryResult {
  * @returns {HasBinaryResult}
  */
 export function hasCandle(): HasBinaryResult {
-  return hasBinary(`${path.join(`"${process.env.WIX}"`, 'bin', 'candle.exe')} -?`);
+  return hasBinary('candle -?') || hasBinary(`${path.join(`"${process.env.WIX}"`, 'bin', 'candle.exe')} -?`);
 }
 
 /**
@@ -20,7 +20,7 @@ export function hasCandle(): HasBinaryResult {
  * @returns {HasBinaryResult}
  */
 export function hasLight(): HasBinaryResult {
-  return hasBinary(`${path.join(`"${process.env.WIX}"`, 'bin', 'light.exe')} -?`);
+  return hasBinary('light -?') || hasBinary(`${path.join(`"${process.env.WIX}"`, 'bin', 'light.exe')} -?`);
 }
 
 /**
