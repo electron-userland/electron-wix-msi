@@ -7,7 +7,7 @@ beforeAll(() => {
         return new Buffer('8.0.0');
       }
 
-      if (name.endsWith('light.exe -?') || name.endsWith('candle.exe -?')) {
+      if (name.includes('light') || name.includes('candle')) {
         return new Buffer(' version 3.11.0.1701');
       }
 

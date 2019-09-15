@@ -11,7 +11,13 @@ export interface HasBinaryResult {
  * @returns {HasBinaryResult}
  */
 export function hasCandle(): HasBinaryResult {
-  return hasBinary('candle -?') || hasBinary(`${path.join(`"${process.env.WIX}"`, 'bin', 'candle.exe')} -?`);
+  let result = hasBinary('candle -?');
+  if (!result.has) {
+    result = hasBinary(`"${path.join(process.env.WIX, 'bin', 'candle.exe')}"`);
+  }
+
+  console.log('Using WiX environment variable');
+  return result;
 }
 
 /**
@@ -20,7 +26,12 @@ export function hasCandle(): HasBinaryResult {
  * @returns {HasBinaryResult}
  */
 export function hasLight(): HasBinaryResult {
-  return hasBinary('light -?') || hasBinary(`${path.join(`"${process.env.WIX}"`, 'bin', 'light.exe')} -?`);
+  let result = hasBinary('light -?');
+  if (!result.has) {
+    result = hasBinary(`"${path.join(process.env.WIX, 'bin', 'light.exe')}"`);
+  }
+  console.log('Using WiX environment variable');
+  return result;
 }
 
 /**
@@ -50,7 +61,6 @@ export function hasBinary(cmd: string): HasBinaryResult {
  * @returns {(string | null)}
  */
 function findVersion(input: string): string | null {
-  console.log(input);
   const regex = / version (\d\.\d{1,2}\.\d{1,2}\.\d{1,6})/;
   const matched = input.match(regex);
 
