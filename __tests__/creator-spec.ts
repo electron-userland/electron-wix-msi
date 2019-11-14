@@ -226,6 +226,16 @@ test('MSICreator compile() creates a wixobj and msi file with ui extensions', as
   expect(mockSpawnArgs.args).toContain('WixUIExtension');
 });
 
+test('MSICreator compile() passes cultures args to the binary', async () => {
+  const cultures = 'en-US;fr-FR;neutral-cn'; 
+  const msiCreator = new MSICreator({ ...defaultOptions, cultures });
+
+  await msiCreator.create();
+  await msiCreator.compile();
+
+  expect(mockSpawnArgs.args).toContain(`-cultures:${cultures}`);
+});
+
 test('MSICreator compile() passes extension args to the binary', async () => {
   const extensions = ['WixUIExtension', 'WixUtilExtension'];
   const msiCreator = new MSICreator({ ...defaultOptions, extensions });
