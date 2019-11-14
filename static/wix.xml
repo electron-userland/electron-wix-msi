@@ -15,6 +15,16 @@
              InstallScope="perMachine"
              Comments="Windows Installer Package"
              Platform="{{Platform}}"/>
+
+    <!-- Overides the defautl install mode. It solves a problem where
+    individual packaged files that have the same version as in pervious
+    installed App version will be deleted if the files a re in use during
+    this upgrade. Unfortunately this causes an ICE 40 warning during int he linker. -->
+    <Property Id="REINSTALLMODE" Value="emus" />
+    <!-- Overrides the default reboot behavior if files are in use during the upgrade.
+     This way no unpxecpted reboot will happpen.-->
+    <Property Id="REBOOT" Value="ReallySuppress" />
+    
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
 
     <!-- Handle Updates -->
