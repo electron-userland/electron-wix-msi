@@ -1,17 +1,17 @@
-const oldPlatform = process.platform;
+import { overridePlatform, resetPlatform } from '../test-utils';
 
 afterEach(() => {
   jest.resetModules();
 });
 
 afterAll(() => {
-  process.platform = oldPlatform;
+  resetPlatform();
 });
 
 test('separator returns the correct separator for win32', () => {
   let separator;
 
-  process.platform = 'win32';
+  overridePlatform('win32');
   separator = require('../../src/utils/separator').separator;
   expect(separator).toBe('\\');
 });
@@ -19,7 +19,7 @@ test('separator returns the correct separator for win32', () => {
 test('separator returns the correct separator for unix', () => {
   let separator;
 
-  process.platform = 'linux';
+  overridePlatform('linux');
   separator = require('../../src/utils/separator').separator;
   expect(separator).toBe('/');
 });

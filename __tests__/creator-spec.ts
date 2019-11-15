@@ -16,6 +16,9 @@ const mockSpawnArgs = {
 };
 
 beforeAll(() => {
+  // Load into cache
+  require('callsites');
+
   jest.mock('child_process', () => ({
     execSync(name: string) {
       if (name === 'node -v') {
@@ -30,7 +33,7 @@ beforeAll(() => {
     },
     spawn(name: string, args: Array<string>, options: SpawnOptions) {
       mockSpawnArgs.name = name;
-      mockSpawnArgs.args = args;
+      mockSpawnArgs.args = args as any;
       mockSpawnArgs.options = options;
       return new MockSpawn(name, args, options, mockPassedFs);
     }
@@ -227,7 +230,7 @@ test('MSICreator compile() creates a wixobj and msi file with ui extensions', as
 });
 
 test('MSICreator compile() passes cultures args to the binary', async () => {
-  const cultures = 'en-US;fr-FR;neutral-cn'; 
+  const cultures = 'en-US;fr-FR;neutral-cn';
   const msiCreator = new MSICreator({ ...defaultOptions, cultures });
 
   await msiCreator.create();
@@ -243,7 +246,9 @@ test('MSICreator compile() passes extension args to the binary', async () => {
   await msiCreator.create();
   await msiCreator.compile();
 
-  expect(mockSpawnArgs.args).toContain(...extensions);
+  extensions.forEach((extension) => {
+    expect(mockSpawnArgs.args).toContain(extension);
+  });
 });
 
 test('MSICreator compile() combines custom extensions with ui extensions', async () => {
@@ -254,7 +259,9 @@ test('MSICreator compile() combines custom extensions with ui extensions', async
   await msiCreator.compile();
 
   expect(mockSpawnArgs.args).toContain('WixUIExtension');
-  expect(mockSpawnArgs.args).toContain(...extensions);
+  extensions.forEach((extension) => {
+    expect(mockSpawnArgs.args).toContain(extension);
+  });
 });
 
 test('MSICreator compile() throws if candle or light fail', async () => {

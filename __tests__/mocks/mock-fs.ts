@@ -1,12 +1,12 @@
-import * as path from 'path';
 import * as fs from 'fs-extra';
+import * as path from 'path';
 
 export const drive = process.platform === 'win32' ? 'C:' : '/';
 export const root = path.join(drive, 'Users', 'tester', 'Code', 'app');
 export const numberOfFiles = 14;
 
 const staticDir = path.join(__dirname, '../../static');
-const staticContent = {};
+const staticContent: Record<string, Record<string, any>> = {};
 staticContent[staticDir] = {};
 
 fs.readdirSync(staticDir)
@@ -16,33 +16,33 @@ fs.readdirSync(staticDir)
 
 export function getMockFileSystem() {
   const mockFiles = {
-    locales: {
+    'locales': {
       'am.pak': '',
       'en-GB.pak': '',
       'de.pak': ''
     },
-    resources: {
+    'resources': {
       'app.asar.unpacked': {
-        'node_modules': {
+        node_modules: {
           '@nodert-win10': {
             'windows.foundation': {
-              'build': {
-                'Release': {
+              build: {
+                Release: {
                   'binding.node': 'hi'
                 }
               }
             },
             'windows.data.xml.dom': {
-              'build': {
-                'Release': {
+              build: {
+                Release: {
                   'binding.node': 'hi'
                 }
               }
             }
           }
         },
-        'src': {
-          'static': {
+        src: {
+          static: {
             'ssb-interop.js': 'hi'
           }
         }
@@ -56,9 +56,9 @@ export function getMockFileSystem() {
     'slack.exe': 'hi',
     'LICENSE': 'hi',
     'node.dll': 'hi'
-  }
+  };
 
-  const system = {};
+  const system: Record<string, any> = {};
   system[root] = mockFiles;
 
   // Add files needed by this module:
