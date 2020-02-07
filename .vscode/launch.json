@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+            "name": "Debug",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/harness/debug.js",
+            "preLaunchTask": "Build",
+            "outFiles": ["${workspaceFolder}/lib/**/*.js"],
+            "sourceMaps": true,
+            "runtimeArgs": ["--inspect-brk=9229"],
+            "console": "integratedTerminal",
+            "port": 9229
+          }
+    ]
+  }
+  
