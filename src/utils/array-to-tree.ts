@@ -87,13 +87,28 @@ export function isChild(parent: string, possibleChild: string): boolean {
  * @param {string} [inputRoot]
  * @returns {FileFolderTree}
  */
-export function arrayToTree(input: Array<string>, root: string): FileFolderTree {
-  const output: FileFolderTree = { __ELECTRON_WIX_MSI_FILES__: [], __ELECTRON_WIX_MSI_PATH__: root };
+export function arrayToTree(input: Array<string>, root: string, appVersion?: string ): FileFolderTree {
+  const output: FileFolderTree = {
+    __ELECTRON_WIX_MSI_FILES__: [],
+    __ELECTRON_WIX_MSI_PATH__: root,
+    __ELECTRON_WIX_MSI_DIR_NAME__: path.basename(root)
+   };
+
+  let entryPoint = output;
+  if (appVersion) {
+    const versionNode  = {
+      __ELECTRON_WIX_MSI_FILES__: [],
+      __ELECTRON_WIX_MSI_PATH__: root,
+      __ELECTRON_WIX_MSI_DIR_NAME__: `app-${appVersion}` };
+    output[`app-${appVersion}`] = versionNode;
+    entryPoint = versionNode;
+  }
+
   const children: Array<string> = input.filter((e) => isChild(root, e));
   const directChildren: Array<string> = children.filter((e) => isDirectChild(root, e));
 
   directChildren.forEach((directChild) => {
-    output[path.basename(directChild)] = arrayToTree(children, directChild);
+    entryPoint[path.basename(directChild)] = arrayToTree(children, directChild);
   });
 
   return output;
@@ -137,13 +152,21 @@ export function arrayToTree(input: Array<string>, root: string): FileFolderTree 
  * @param {string} root
  * @returns {FileFolderTree}
  */
-export function addFilesToTree(tree: FileFolderTree, files: Array<string>, root: string): FileFolderTree {
+export function addFilesToTree( tree: FileFolderTree,
+                                files: Array<string>,
+                                root: string,
+                                executableName: string,
+                                stubExecutablePath: string,
+                                appVersion?: string): FileFolderTree {
   const output: FileFolderTree = cloneDeep(tree);
+  // inject a stub executable into he root directory since the actual
+  // exe has been placed in a versioned sub-folder.
+  output.__ELECTRON_WIX_MSI_FILES__.push({ name: `${executableName}.exe`, path:  stubExecutablePath});
 
   files.forEach((filepath) => {
     const file: File = { name: path.basename(filepath), path: filepath };
     const walkingSteps = filepath.split(separator);
-    let target: FileFolderTree = output;
+    let target: FileFolderTree = output[`app-${appVersion}`] as FileFolderTree;
 
     if (walkingSteps[0] === root) {
       walkingSteps.splice(0, 1);

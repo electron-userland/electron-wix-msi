@@ -1,10 +1,18 @@
+
+// jest.mock('exe-icon-extractor');
+
 import { SpawnOptions } from 'child_process';
 import * as fs from 'fs-extra';
 import * as mockFs from 'mock-fs';
 import * as os from 'os';
 import * as path from 'path';
 
+jest.mock('../src/utils/rc-edit', () => ({
+  createStubExe: jest.fn()
+}));
+
 import { MSICreator, UIOptions } from '../src/creator';
+import { createStubExe } from '../src/utils/rc-edit';
 import { getMockFileSystem, numberOfFiles, root } from './mocks/mock-fs';
 import { MockSpawn } from './mocks/mock-spawn';
 
@@ -15,9 +23,12 @@ const mockSpawnArgs = {
   options: {}
 };
 
+
 beforeAll(() => {
   // Load into cache
   require('callsites');
+
+  (createStubExe as jest.Mock).mockReturnValue('C:\\Stub.exe');
 
   jest.mock('child_process', () => ({
     execSync(name: string) {
@@ -76,6 +87,19 @@ const testIncludes = (title: string, ...content: Array<string>) => {
   });
 };
 
+
+const regexTestIncludes = (title: string, ...content: Array<RegExp>) => {
+  return test(`.wxs file includes ${title}`, () => {
+    if (Array.isArray(content)) {
+      // We want to be able to search across line breaks and multiple spaces.
+      const singleLineWxContent = wxsContent.replace(/\s\s+/g, ' ');
+      content.forEach((innerContent) => {
+        expect(innerContent.test(singleLineWxContent)).toBeTruthy();
+      });
+    }
+  });
+};
+
 let wxsContent = '';
 let mockWixInstalled = true;
 
@@ -105,10 +129,14 @@ testIncludes('an ApplicationProgramsFolder', '<Directory Id="ApplicationPrograms
 
 testIncludes('a default appUserModelId', 'Key="System.AppUserModel.ID" Value="com.squirrel.Acme.acme"');
 
+regexTestIncludes('versioned app folder', /<Directory\s*Id=".*"\s*Name="app-1\.0\.0"/);
+
+regexTestIncludes('stubbed exe', /<File\s*Name="acme\.exe"\s*Id=".*"\s*Source="C:\\\\Stub\.exe"/);
+
 test('.wxs file has as many components as we have files', () => {
-  // Files + Shortcut
+  // Files + Shortcut + StubExecutable
   const count = wxsContent.split('</Component>').length - 1;
-  expect(count).toEqual(numberOfFiles + 1);
+  expect(count).toEqual(numberOfFiles + 2);
 });
 
 test('MSICreator create() creates Wix file with UI properties', async () => {

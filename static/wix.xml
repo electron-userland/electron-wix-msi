@@ -31,7 +31,7 @@
     <Upgrade Id="{{UpgradeCode}}">
       <UpgradeVersion OnlyDetect="no" Property="PREVIOUSFOUND"
           Minimum="0.0.0" IncludeMinimum="yes"
-          Maximum="{{Version}}" IncludeMaximum="no" />
+          Maximum="{{Version}}" IncludeMaximum="yes" />
     </Upgrade>
 
     <InstallExecuteSequence>
