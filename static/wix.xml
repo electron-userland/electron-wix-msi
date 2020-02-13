@@ -72,7 +72,24 @@
       </Component>
     </DirectoryRef>
 
-    <!-- Step 4: Tell WiX to install the files -->
+     <!-- Step 4: Add app to Desktop -->
+     <DirectoryRef Id="DesktopFolder">
+           <Component Id="DesktopShortcut" Guid="{{DesktopShortcutGuid}}" >
+               <Shortcut Id="MyDesktopShortcut"
+                         Name="{{ShortcutName}}"
+                         Description="{{ApplicationDescription}}"
+                         Target="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe"
+                         WorkingDirectory="INSTAAPPLICATIONROOTDIRECTORYLLFOLDER"/>
+               <RegistryValue Root="HKCU"
+                              Key="Software\Microsoft\{{ApplicationShortName}}"
+                              Name="installed"
+                              Type="integer"
+                              Value="1"
+                              KeyPath="yes" />
+           </Component>
+       </DirectoryRef>
+
+    <!-- Step 5: Tell WiX to install the files -->
     <Feature Id="MainApplication" Title="Main Application" Level="1">
 <!-- {{ComponentRefs}} -->
       <ComponentRef Id="ApplicationShortcut" />
