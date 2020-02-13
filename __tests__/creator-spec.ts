@@ -396,3 +396,12 @@ test('MSICreator create() shortcut name override', async () => {
 });
 testIncludes('Custom shortcut name', '<Shortcut Id="ApplicationStartMenuShortcut" Name="BeepBeep"');
 
+test('MSICreator create() shortcut name override for desktop shorcut', async () => {
+  const msiCreator = new MSICreator({ ...defaultOptions, shortcutName: 'BeepBeep'});
+
+  const { wxsFile } = await msiCreator.create();
+  wxsContent = await fs.readFile(wxsFile, 'utf-8');
+  expect(wxsFile).toBeTruthy();
+});
+testIncludes('Custom shortcut name', '<Shortcut Id="MyDesktopShortcut" Name="BeepBeep"');
+
