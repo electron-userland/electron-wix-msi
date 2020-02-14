@@ -76,6 +76,7 @@
       </Component>
     </DirectoryRef>
 
+   <!-- Step 4: Add app desktop shortcut --> 
     <DirectoryRef Id="DesktopFolder">
       <Component Id="DesktopShortcut" Guid="{{DesktopShortcutGuid}}" >
           <Shortcut Id="MyDesktopShortcut"
@@ -92,7 +93,7 @@
       </Component>
     </DirectoryRef>
 
-    <!-- Step 4: Tell WiX to install the files -->
+    <!-- Step 5: Tell WiX to install the files -->
     <Feature Id="MainApplication" Title="Main Application" Level="1">
 <!-- {{ComponentRefs}} -->
       <ComponentRef Id="ApplicationShortcut" />
