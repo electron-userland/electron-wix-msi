@@ -211,6 +211,7 @@ export class MSICreator {
       '{{ProgramFilesFolder}}': this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
       '{{ProcessorArchitecture}}' : this.arch,
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
+      '{{DesktopShortcutGuid}}': uuid()
     };
 
     const completeTemplate = replaceInString(this.wixTemplate, scaffoldReplacements);
