@@ -6,7 +6,7 @@
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/harness/debug.js",
+            "program": "${workspaceFolder}/harness/harness.js",
             "preLaunchTask": "Build",
             "outFiles": ["${workspaceFolder}/lib/**/*.js"],
             "sourceMaps": true,
