@@ -154,7 +154,6 @@ export function arrayToTree(input: Array<string>, root: string, appVersion?: str
  */
 export function addFilesToTree( tree: FileFolderTree,
                                 files: Array<string>,
-                                root: string,
                                 executableName: string,
                                 stubExecutablePath: string,
                                 appVersion?: string): FileFolderTree {
@@ -167,10 +166,6 @@ export function addFilesToTree( tree: FileFolderTree,
     const file: File = { name: path.basename(filepath), path: filepath };
     const walkingSteps = filepath.split(separator);
     let target: FileFolderTree = output[`app-${appVersion}`] as FileFolderTree;
-
-    if (walkingSteps[0] === root) {
-      walkingSteps.splice(0, 1);
-    }
 
     walkingSteps.forEach((step, i) => {
       if (target[step] && i < walkingSteps.length - 1) {

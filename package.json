@@ -33,6 +33,9 @@
     "semver": "^6.3.0",
     "uuid": "^3.3.3"
   },
+  "optionalDependencies": {
+    "exe-icon-extractor": "^1.0.8"
+  },
   "devDependencies": {
     "@types/debug": "4.1.5",
     "@types/fs-extra": "^8.0.1",

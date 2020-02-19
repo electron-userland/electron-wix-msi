@@ -1,6 +1,3 @@
-
-// jest.mock('exe-icon-extractor');
-
 import { SpawnOptions } from 'child_process';
 import * as fs from 'fs-extra';
 import * as mockFs from 'mock-fs';
@@ -25,6 +22,8 @@ const mockSpawnArgs = {
 
 
 beforeAll(() => {
+  // console.log call needed as workaround to make jest work with mock-fs
+  console.log('');
   // Load into cache
   require('callsites');
 
@@ -131,7 +130,7 @@ testIncludes('a default appUserModelId', 'Key="System.AppUserModel.ID" Value="co
 
 regexTestIncludes('versioned app folder', /<Directory\s*Id=".*"\s*Name="app-1\.0\.0"/);
 
-regexTestIncludes('stubbed exe', /<File\s*Name="acme\.exe"\s*Id=".*"\s*Source="C:\\\\Stub\.exe"/);
+regexTestIncludes('stubbed exe', /<File\s*Name="acme\.exe"\s*Id=".*"\s*Source="C:\\Stub\.exe"/);
 
 test('.wxs file has as many components as we have files', () => {
   // Files + Shortcut + StubExecutable

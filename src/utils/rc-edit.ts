@@ -32,7 +32,6 @@ function getFileInfo(exePath: string): Promise<any> {
 
 async function extractIconFromApp(exePath: string, tempFolder: string): Promise<string> {
   try {
-    const x = require('exe-icon-extractor');
     const buffer = extractIcon(exePath, 'large');
     const iconPath = path.join(tempFolder, 'app.ico');
     await fs.writeFile(iconPath, buffer);
@@ -53,9 +52,11 @@ export async function createStubExe(appDirectory: string,
                                     ): Promise<string> {
 
   const tempPath = process.env.TEMP || process.env.TMPDIR || '/tmp';
-  const tempFolder = await fs.mkdtemp(path.join(tempPath, exe));
+  const appTempFolder = await fs.mkdtemp(exe);
+  const tempFolder = path.join(tempPath, appTempFolder);
+  await fs.mkdir(tempFolder);
   const subbedExePath = path.join(tempFolder, `${exe}.exe`);
-  const stubPath = path.join(__dirname, '..\\..\\vendor\\StubExecutable.exe');
+  const stubPath = path.join(__dirname, '../../vendor/StubExecutable.exe');
   await fs.copyFile(stubPath, subbedExePath);
   const appExe = path.join(appDirectory, `${exe}.exe`);
   let appIconPath: string | undefined;

@@ -57,31 +57,34 @@ const mockFolderTree = {
 };
 
 const mockFolderFileTree = defaultsDeep(cloneDeep(mockFolderTree), {
-  __ELECTRON_WIX_MSI_FILES__: [{ name: `slack.exe`, path: `slack${S}slack.exe` }],
-  resources: {
-    '__ELECTRON_WIX_MSI_FILES__': [{ name: `text.txt`, path: `slack${S}resources${S}text.txt` }],
-    'app.asar.unpacked': {
-      __ELECTRON_WIX_MSI_FILES__: [
-        { name: `image.png`, path: `slack${S}resources${S}app.asar.unpacked${S}image.png` },
-      ],
-      node_modules: {
+  __ELECTRON_WIX_MSI_FILES__: [{ name: `slack.exe`, path: `C:${S}temp${S}slack.exe` }],
+  'app-1.0.0' : {
+    __ELECTRON_WIX_MSI_FILES__: [{ name: `slack.exe`, path: `slack${S}slack.exe` }],
+    resources: {
+      '__ELECTRON_WIX_MSI_FILES__': [{ name: `text.txt`, path: `slack${S}resources${S}text.txt` }],
+      'app.asar.unpacked': {
         __ELECTRON_WIX_MSI_FILES__: [
-          { name: `package.json`, path: `slack${S}resources${S}app.asar.unpacked${S}node_modules${S}package.json` }
-        ]
-      },
-      src: {
-        __ELECTRON_WIX_MSI_FILES__: [
-          { name: `package.json`, path: `slack${S}resources${S}app.asar.unpacked${S}src${S}package.json` }
-        ]
+          { name: `image.png`, path: `slack${S}resources${S}app.asar.unpacked${S}image.png` },
+        ],
+        node_modules: {
+          __ELECTRON_WIX_MSI_FILES__: [
+            { name: `package.json`, path: `slack${S}resources${S}app.asar.unpacked${S}node_modules${S}package.json` }
+          ]
+        },
+        src: {
+          __ELECTRON_WIX_MSI_FILES__: [
+            { name: `package.json`, path: `slack${S}resources${S}app.asar.unpacked${S}src${S}package.json` }
+          ]
+        }
       }
+    },
+    locales: {
+      __ELECTRON_WIX_MSI_FILES__: [
+        { name: `de-DE.json`, path: `slack${S}locales${S}de-DE.json` },
+        { name: `en-US.json`, path: `slack${S}locales${S}en-US.json` }
+      ]
     }
-  },
-  locales: {
-    __ELECTRON_WIX_MSI_FILES__: [
-      { name: `de-DE.json`, path: `slack${S}locales${S}de-DE.json` },
-      { name: `en-US.json`, path: `slack${S}locales${S}en-US.json` }
-    ]
-  }
+ }
 });
 
 test(`isChild() returns true for a child and parent`, () => {
@@ -124,5 +127,5 @@ test(`arrayToTree() creates a tree structure`, () => {
 });
 
 test(`addFilesToTree() adds files to a tree structure`, () => {
-  //expect(addFilesToTree(mockFolderTree, mockFiles, `slack`, '', '1.0.0')).toEqual(mockFolderFileTree);
+  expect(addFilesToTree(mockFolderTree, mockFiles, `slack`, `C:${S}temp${S}slack.exe`, '1.0.0')).toEqual(mockFolderFileTree);
 });

@@ -1,3 +1,2 @@
 
-const extractIcon = jest.fn();
-export default extractIcon;
+export const extractIcon = jest.fn();

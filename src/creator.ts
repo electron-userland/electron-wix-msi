@@ -185,14 +185,10 @@ export class MSICreator {
    * @returns {Promise<{ wxsFile: string, wxsContent: string }>}
    */
   private async createWxs(): Promise<{ wxsFile: string, wxsContent: string }> {
-    if (!this.tree) {
-      throw new Error('Tree does not exist');
-    }
-
     const target = path.join(this.outputDirectory, `${this.exe}.wxs`);
     const base = path.basename(this.appDirectory);
     const directories = await this.getDirectoryForTree(
-      this.tree, base, 8, ROOTDIR_NAME, this.programFilesFolderName);
+      this.tree!, base, 8, this.programFilesFolderName, ROOTDIR_NAME);
     const componentRefs = await this.getComponentRefs();
 
     const scaffoldReplacements = {
@@ -383,8 +379,8 @@ export class MSICreator {
   private getDirectoryForTree(tree: FileFolderTree,
                               treePath: string,
                               indent: number,
-                              id?: string,
-                              name?: string): string {
+                              name: string,
+                              id?: string): string {
     const childDirectories = Object.keys(tree)
       .filter((k) => !k.startsWith('__ELECTRON_WIX_MSI'))
       .map((k) => {
@@ -392,7 +388,6 @@ export class MSICreator {
           tree[k] as FileFolderTree,
           (tree[k] as FileFolderTree).__ELECTRON_WIX_MSI_PATH__,
           indent + 2,
-          undefined,
           (tree[k] as FileFolderTree).__ELECTRON_WIX_MSI_DIR_NAME__,
         );
       });
@@ -408,7 +403,7 @@ export class MSICreator {
     return replaceInString(this.directoryTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
       '{{DirectoryId}}': id || this.getComponentId(treePath),
-      '{{DirectoryName}}': name || path.basename(treePath),
+      '{{DirectoryName}}': name,
       '<!-- {{Children}} -->': children
     });
   }
@@ -429,7 +424,7 @@ export class MSICreator {
                                         this.iconPath);
 
     const folderTree = arrayToTree(this.directories, root, this.semanticVersion);
-    const fileFolderTree = addFilesToTree(folderTree, this.files, root, this.exe, stubExe, this.semanticVersion);
+    const fileFolderTree = addFilesToTree(folderTree, this.files, this.exe, stubExe, this.semanticVersion);
 
     return fileFolderTree;
   }
