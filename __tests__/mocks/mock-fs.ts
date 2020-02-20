@@ -3,7 +3,7 @@ import * as path from 'path';
 
 export const drive = process.platform === 'win32' ? 'C:' : '/';
 export const root = path.join(drive, 'Users', 'tester', 'Code', 'app');
-export const numberOfFiles = 14;
+export const numberOfFiles = 15;
 
 const staticDir = path.join(__dirname, '../../static');
 const staticContent: Record<string, Record<string, any>> = {};
