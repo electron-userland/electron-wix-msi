@@ -7,7 +7,9 @@ import { spawnPromise } from './utils/spawn';
 import { Component, ComponentRef, Directory, File, FileFolderTree, StringMap } from './interfaces';
 import { addFilesToTree, arrayToTree } from './utils/array-to-tree';
 import { hasCandle, hasLight } from './utils/detect-wix';
+import { createStubExe } from './utils/rc-edit';
 import { replaceInString, replaceToFile } from './utils/replace';
+import { getWindowsCompliantVersion } from './utils/version-util';
 import { getDirectoryStructure } from './utils/walker';
 
 const getTemplate = (name: string) => fs.readFileSync(path.join(__dirname, `../static/${name}.xml`), 'utf-8');
@@ -19,6 +21,7 @@ export interface MSICreatorOptions {
   appUserModelId?: string;
   description: string;
   exe: string;
+  appIconPath?: string;
   extensions?: Array<string>;
   cultures?: string;
   language?: number;
@@ -71,6 +74,7 @@ export class MSICreator {
   public appUserModelId: string;
   public description: string;
   public exe: string;
+  public iconPath?: string;
   public extensions: Array<string>;
   public cultures?: string;
   public language: number;
@@ -82,7 +86,8 @@ export class MSICreator {
   public shortcutFolderName: string;
   public shortcutName: string;
   public upgradeCode: string;
-  public version: string;
+  public windowsCompliantVersion: string;
+  public semanticVersion: string;
   public certificateFile?: string;
   public certificatePassword?: string;
   public signWithParams?: string;
@@ -101,6 +106,7 @@ export class MSICreator {
     this.certificatePassword = options.certificatePassword;
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, '');
+    this.iconPath = options.appIconPath;
     this.extensions = options.extensions || [];
     this.cultures = options.cultures;
     this.language = options.language || 1033;
@@ -113,7 +119,8 @@ export class MSICreator {
     this.shortcutName = options.shortcutName || options.name;
     this.signWithParams = options.signWithParams;
     this.upgradeCode = options.upgradeCode || uuid();
-    this.version = options.version;
+    this.semanticVersion = options.version;
+    this.windowsCompliantVersion = getWindowsCompliantVersion(options.version);
     this.arch = options.arch || 'x86';
 
     this.appUserModelId = options.appUserModelId
@@ -134,7 +141,7 @@ export class MSICreator {
 
     this.files = files;
     this.directories = directories;
-    this.tree = this.getTree();
+    this.tree = await this.getTree();
 
     const { wxsContent, wxsFile } = await this.createWxs();
     this.wxsFile = wxsFile;
@@ -178,14 +185,10 @@ export class MSICreator {
    * @returns {Promise<{ wxsFile: string, wxsContent: string }>}
    */
   private async createWxs(): Promise<{ wxsFile: string, wxsContent: string }> {
-    if (!this.tree) {
-      throw new Error('Tree does not exist');
-    }
-
     const target = path.join(this.outputDirectory, `${this.exe}.wxs`);
     const base = path.basename(this.appDirectory);
     const directories = await this.getDirectoryForTree(
-      this.tree, base, 8, ROOTDIR_NAME, this.programFilesFolderName);
+      this.tree!, base, 8, this.programFilesFolderName, ROOTDIR_NAME);
     const componentRefs = await this.getComponentRefs();
 
     const scaffoldReplacements = {
@@ -206,7 +209,7 @@ export class MSICreator {
       '{{ShortcutFolderName}}': this.shortcutFolderName,
       '{{ShortcutName}}': this.shortcutName,
       '{{UpgradeCode}}': this.upgradeCode,
-      '{{Version}}': this.version,
+      '{{Version}}': this.windowsCompliantVersion,
       '{{Platform}}': this.arch,
       '{{ProgramFilesFolder}}': this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
       '{{ProcessorArchitecture}}' : this.arch,
@@ -376,15 +379,16 @@ export class MSICreator {
   private getDirectoryForTree(tree: FileFolderTree,
                               treePath: string,
                               indent: number,
-                              id?: string,
-                              name?: string): string {
+                              name: string,
+                              id?: string): string {
     const childDirectories = Object.keys(tree)
       .filter((k) => !k.startsWith('__ELECTRON_WIX_MSI'))
       .map((k) => {
         return this.getDirectoryForTree(
           tree[k] as FileFolderTree,
           (tree[k] as FileFolderTree).__ELECTRON_WIX_MSI_PATH__,
-          indent + 2
+          indent + 2,
+          (tree[k] as FileFolderTree).__ELECTRON_WIX_MSI_DIR_NAME__,
         );
       });
     const childFiles = tree.__ELECTRON_WIX_MSI_FILES__
@@ -399,7 +403,7 @@ export class MSICreator {
     return replaceInString(this.directoryTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
       '{{DirectoryId}}': id || this.getComponentId(treePath),
-      '{{DirectoryName}}': name || path.basename(treePath),
+      '{{DirectoryName}}': name,
       '<!-- {{Children}} -->': children
     });
   }
@@ -409,10 +413,18 @@ export class MSICreator {
    *
    * @returns {FileFolderTree}
    */
-  private getTree(): FileFolderTree {
+  private async getTree(): Promise<FileFolderTree> {
     const root = this.appDirectory;
-    const folderTree = arrayToTree(this.directories, root);
-    const fileFolderTree = addFilesToTree(folderTree, this.files, root);
+    const stubExe = await createStubExe(this.appDirectory,
+                                        this.exe,
+                                        this.name,
+                                        this.manufacturer,
+                                        this.description,
+                                        this.windowsCompliantVersion,
+                                        this.iconPath);
+
+    const folderTree = arrayToTree(this.directories, root, this.semanticVersion);
+    const fileFolderTree = addFilesToTree(folderTree, this.files, this.exe, stubExe, this.semanticVersion);
 
     return fileFolderTree;
   }

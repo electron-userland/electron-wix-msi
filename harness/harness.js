@@ -14,17 +14,20 @@ async function clean() {
 async function harness() {
   const msiCreator = new MSICreator({
     appDirectory: APP_DIR,
-    exe: 'slack',
-    manufacturer: 'Slack Technologies',
-    name: 'Slack',
+    exe: 'HelloWix.exe',
+    manufacturer: 'Wix Technologies',
+    name: 'HelloWix',
+    appIconPath: path.join(APP_DIR, 'HelloWix.ico'),
     outputDirectory: OUT_DIR,
-    description: 'Test',
+    description: 'A hello wix package',
     ui: {
       chooseDirectory: true
     },
-    version: '1.2.3.4'
+    version: '1.2.3-beta',
+    upgradeCode: '90E8ABD6-B284-4495-81F7-4913E25A6FA3'
   });
 
+  await clean();
   await msiCreator.create();
   await msiCreator.compile();
 }

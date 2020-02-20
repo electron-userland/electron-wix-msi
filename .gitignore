@@ -1,6 +1,5 @@
 node_modules
 lib
 coverage
-harness/app/*
 harness/out/*
 .DS_Store

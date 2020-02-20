@@ -27,6 +27,7 @@ export interface FileFolderTree {
   [key: string]: FileFolderTree | Array<File> | string;
   __ELECTRON_WIX_MSI_FILES__: Array<File>;
   __ELECTRON_WIX_MSI_PATH__: string;
+  __ELECTRON_WIX_MSI_DIR_NAME__: string;
 }
 
 export interface File {
