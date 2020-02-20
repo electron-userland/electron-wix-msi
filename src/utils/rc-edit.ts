@@ -18,13 +18,7 @@ interface RcInfo {
 
 function getFileInfo(exePath: string): Promise<any> {
   const promise = new Promise<any>((resolve, reject) => {
-    rcinfo(exePath, (error: Error, info: any) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(info);
-      }
-    });
+    rcinfo(exePath, (error: Error, info: any) => error ? reject(error) : resolve(info));
   });
 
   return promise;
@@ -37,7 +31,7 @@ async function extractIconFromApp(exePath: string, tempFolder: string): Promise<
     await fs.writeFile(iconPath, buffer);
     return iconPath;
   } catch (error) {
-    console.log('Unable to extract icon from exe. Please provide an explicit icon via parameter.', error);
+    console.error('Unable to extract icon from exe. Please provide an explicit icon via parameter.', error);
     return '';
   }
 }
@@ -69,7 +63,7 @@ export async function createStubExe(appDirectory: string,
   try {
    rcInfo = await getFileInfo(appExe);
   } catch (error) {
-    console.log('Failed to read version info from exe', error);
+    console.warn('Unable to read file info from exe. Falling back to packaging description.', error);
   }
 
   rcOptions = {

@@ -20,9 +20,9 @@ fs.readdirSync(staticDir)
   });
 
   fs.readdirSync(vendorDir)
-  .forEach((file) => {
-    vendorContent[vendorDir][file] = '';
-  });
+    .forEach((file) => {
+      vendorContent[vendorDir][file] = '';
+    });
 
 
 export function getMockFileSystem() {
@@ -73,6 +73,5 @@ export function getMockFileSystem() {
   system[root] = mockFiles;
   system[tmp] = {};
   // Add files needed by this module:
-  return {...vendorContent, ...system, ...staticContent };
+  return { ...vendorContent, ...system, ...staticContent };
 }
-

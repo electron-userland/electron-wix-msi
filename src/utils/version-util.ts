@@ -1,7 +1,7 @@
 import * as semver from 'semver';
 import { isNumber } from 'util';
 
-function isWindowsComplaint(version: string): boolean {
+function isWindowsCompliant(version: string): boolean {
   const versionArray = version.split('.');
   if (versionArray.length !== 4) {
    return false;
@@ -24,7 +24,7 @@ function isWindowsComplaint(version: string): boolean {
  * @returns {string}
  */
 export function getWindowsCompliantVersion(input: string): string {
-  if (isWindowsComplaint(input)) {
+  if (isWindowsCompliant(input)) {
     return input;
   }
 
