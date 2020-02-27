@@ -4,7 +4,9 @@ import hasha from 'hasha';
 import path from 'path';
 
 import { getWindowsCompliantVersion } from '../../lib/utils/version-util';
+import { getProcessPath, kill, launch, runs } from './utils/app-process';
 import { checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershell } from './utils/installer';
+import { readAppUserModelId } from './utils/lnk-inspector';
 import { defaultOptions, HARNESS_APP_DIR, OUT_DIR, packageSampleApp } from './utils/packager';
 
 const msiPath = path.join(OUT_DIR, 'HelloWix.msi');
@@ -30,6 +32,7 @@ interface TestConfig {
   arch: 'x86' | 'x64';
   shortcutFolderName?: string;
   shortcutName?: string;
+  appUserModelId?: string;
 }
 
 describe('Electron WIX MSI', () => {
@@ -41,7 +44,7 @@ describe('Electron WIX MSI', () => {
 
   const tests: TestConfig[] = [
     {arch: 'x86'},
-    {arch: 'x86', shortcutFolderName: 'SuperWix', shortcutName: 'SuperHello'},
+    {arch: 'x86', shortcutFolderName: 'SuperWix', shortcutName: 'SuperHello', appUserModelId: 'com.wix.super.hello'},
     {arch: 'x64'},
   ];
 
@@ -59,7 +62,9 @@ describe('Electron WIX MSI', () => {
         configString += test.shortcutFolderName ? '\\' : '';
         configString += test.shortcutName || '';
       }
-      return configString;
+      configString +=  test.appUserModelId ? `|aumid:${test.appUserModelId}` : '';
+
+      return `(${configString})`;
     };
 
     describe(`Packaging ${getTestConfigString()}`, () =>  {
@@ -70,6 +75,15 @@ describe('Electron WIX MSI', () => {
     });
 
     describe(`Installing ${getTestConfigString()}`, () =>  {
+      before(async () => {
+        await kill(options.exe);
+      });
+      after(async () => {
+        await kill(options.exe);
+      });
+
+      const paths = getInstallPaths(options);
+
       it('installs', async () => {
         await install(msiPath);
         const version = getWindowsCompliantVersion(options.version);
@@ -77,24 +91,49 @@ describe('Electron WIX MSI', () => {
       });
 
       it('has all files in program files', () => {
-        const paths = getInstallPaths(options);
-        console.log(paths);
         expect(fs.pathExistsSync(paths.stubExe)).ok();
         expectSameFolderContent(HARNESS_APP_DIR, paths.appFolder);
       });
 
       it('has shortcuts', () => {
-        const paths = getInstallPaths(options);
         expect(fs.pathExistsSync(paths.startMenuShortcut)).ok();
         expect(fs.pathExistsSync(paths.desktopShortcut)).ok();
       });
+
+      it('has AppUserModelId', async () => {
+        const aumid = await readAppUserModelId(paths.startMenuShortcut);
+        expect(aumid).to.be(paths.appUserModelId);
+      });
+
+      const entryPoints = [
+        { name: 'stubExe', path: paths.stubExe },
+        { name: 'start menu shortcut', path: paths.startMenuShortcut },
+        { name: 'desktop shortcut', path: paths.desktopShortcut },
+      ];
+
+      entryPoints.forEach((entryPoint) => {
+        it(`runs the correct binary via ${entryPoint.name}`, async () => {
+          await launch(paths.startMenuShortcut);
+          expect(await runs(options.exe)).ok();
+          expect(await getProcessPath(options.exe)).to.be(paths.appExe);
+          await kill(options.exe);
+         });
+      });
     });
 
+    const options124 = {
+      ...options,
+      version: '1.2.4'
+    };
     describe(`Updating ${getTestConfigString()}`, () =>  {
-      const options124 = {
-        ...options,
-        version: '1.2.4'
-      };
+      before(async () => {
+        await kill(options.exe);
+      });
+      after(async () => {
+        await kill(options.exe);
+      });
+
+      const paths = getInstallPaths(options124);
 
       it('updates', async () => {
         await packageSampleApp(options124);
@@ -104,22 +143,40 @@ describe('Electron WIX MSI', () => {
       });
 
       it('has all files in program files', () => {
-        const paths = getInstallPaths(options124);
         expect(fs.pathExistsSync(paths.stubExe)).ok();
         expectSameFolderContent(HARNESS_APP_DIR, paths.appFolder);
       });
 
       it('has shortcuts', () => {
-        const paths = getInstallPaths(options124);
         expect(fs.pathExistsSync(paths.startMenuShortcut)).ok();
         expect(fs.pathExistsSync(paths.desktopShortcut)).ok();
+      });
+
+      const entryPoints = [
+        { name: 'stubExe', path: paths.stubExe },
+        { name: 'start menu shortcut', path: paths.startMenuShortcut },
+        { name: 'desktop shortcut', path: paths.desktopShortcut },
+      ];
+
+      entryPoints.forEach((entryPoint) => {
+        it(`runs the correct binary via ${entryPoint.name}`, async () => {
+          await launch(paths.startMenuShortcut);
+          expect(await runs(options.exe)).ok();
+          expect(await getProcessPath(options.exe)).to.be(paths.appExe);
+          await kill(options.exe);
+         });
       });
     });
 
     describe(`Uninstalling ${getTestConfigString()}`, () =>  {
       it('uninstalls', async () => {
+        const paths = getInstallPaths(options124);
+
         await uninstall(msiPath);
         expect(await checkInstall(options.name)).not.ok();
+        expect(fs.pathExistsSync(paths.appRootFolder)).not.ok();
+        expect(fs.pathExistsSync(paths.startMenuShortcut)).not.ok();
+        expect(fs.pathExistsSync(paths.desktopShortcut)).not.ok();
       });
     });
   });

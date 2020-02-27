@@ -7,9 +7,11 @@ import { MSICreatorOptions } from '../../../lib/index';
 export interface InstallPaths {
   appRootFolder: string;
   appFolder: string;
+  appExe: string;
   stubExe: string;
   startMenuShortcut: string;
   desktopShortcut: string;
+  appUserModelId: string;
 }
 
 export const install = async (msi: string) => {
@@ -61,12 +63,17 @@ export const checkInstall = async (name: string, version?: string) => {
 export const getInstallPaths = (options: MSICreatorOptions): InstallPaths => {
   const programFiles = options.arch === 'x64' || options.arch === 'ia64' ? process.env.ProgramFiles! : process.env['ProgramFiles(x86)']!;
   const appRootFolder = path.join(programFiles, options.name);
+
+  const shortName = options.shortName || options.name;
+  const appUserModelId = options.appUserModelId || `com.squirrel.${shortName}.${options.exe.replace(/\.exe$/, '')}`;
   return {
     appRootFolder,
     stubExe: path.join(appRootFolder, options.exe),
     appFolder: path.join(appRootFolder, `app-${options.version}`),
+    appExe: path.join(appRootFolder, `app-${options.version}`, options.exe),
     startMenuShortcut: path.join(process.env.ProgramData!, `Microsoft/Windows/Start Menu/Programs/${options.shortcutFolderName || options.manufacturer}/${options.shortcutName || options.name}.lnk`),
     desktopShortcut: path.join(process.env.Public!, `Desktop/${options.shortcutName || options.name}.lnk`),
+    appUserModelId,
   };
 };
 
