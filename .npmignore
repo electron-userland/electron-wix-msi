@@ -10,3 +10,4 @@ coverage
 !vendor
 !lib
 harness
+e2e
