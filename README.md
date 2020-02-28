@@ -98,12 +98,12 @@ await msiCreator.compile();
   Signing Certificate.
 * `certificatePassword` (string, optional) - The password to decrypt the
   certificate given in `certificateFile`.
-* `signWithParams` (string, optional) - Paramaters to pass to `signtool.exe`.
+* `signWithParams` (string, optional) - Parameters to pass to `signtool.exe`.
   Overrides `certificateFile` and `certificatePassword`.
 * `extensions` (array, optional) - Specify WiX extensions to use e.g `['WixUtilExtension', 'C:\My WiX Extensions\FooExtension.dll']`
 * `ui` (UIOptions, optional) - Enables configuration of the UI. See below for
   more information.
-* `arch` (string, optional) - Defines the architecure the MSI is build for. Values can
+* `arch` (string, optional) - Defines the architecture the MSI is build for. Values can
   be either `x86` or `x64`. Default's to `x86` if left undefined.
 
 ##### UI Configuration (Optional)
