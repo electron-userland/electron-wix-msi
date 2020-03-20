@@ -19,10 +19,10 @@ fs.readdirSync(staticDir)
     staticContent[staticDir][file] = fs.readFileSync(path.join(staticDir, file), 'utf-8');
   });
 
-  fs.readdirSync(vendorDir)
-    .forEach((file) => {
-      vendorContent[vendorDir][file] = '';
-    });
+fs.readdirSync(vendorDir)
+  .forEach((file) => {
+    vendorContent[vendorDir][file] = '';
+  });
 
 
 export function getMockFileSystem() {

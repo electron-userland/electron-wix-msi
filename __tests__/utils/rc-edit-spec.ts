@@ -10,7 +10,7 @@ const rceditMock = jest.fn();
 jest.mock('rcedit', () => rceditMock);
 jest.mock('rcinfo', () => rcinfoMock);
 
-import { createStubExe }  from '../../src/utils/rc-edit';
+import { createStubExe } from '../../src/utils/rc-edit';
 
 const orginalTmp = process.env.TEMP;
 const acmeIconRegex = process.platform === 'win32' ? /C:\\tmp\\acme.*\\app\.ico/ : /\/tmp\/acme.*\/app\.ico/;
@@ -22,7 +22,7 @@ const acmeFileInfo = { 'version-string':
     ProductName: 'acme' },
   'file-version': '1.2.3',
   'product-version': '1.2.3',
-  icon: expect.stringMatching(acmeIconRegex) };
+  'icon': expect.stringMatching(acmeIconRegex) };
 
 beforeAll(() => {
   // console.log call needed as workaround to make jest work with mock-fs
@@ -30,7 +30,7 @@ beforeAll(() => {
   process.env.TEMP = process.platform === 'win32' ? 'C:\\tmp' : '/tmp';
   getMockFileSystem();
   mockFs(getMockFileSystem());
-})
+});
 
 afterAll(() => {
   mockFs.restore();
@@ -44,8 +44,8 @@ afterEach(() => {
 });
 
 test('transfers exe file info to stub exe',async () => {
-  rcinfoMock.mockImplementation((_,callback) => {
-    callback(null, { 
+  rcinfoMock.mockImplementation((_, callback) => {
+    callback(null, {
       CompanyName: 'acme corp',
       FileDescription: 'a test',
       LegalCopyright: '2020@acme corp',
@@ -67,14 +67,14 @@ test('uses parameter if rcinfo fails',async () => {
     callback(new Error('fail'), undefined);
   });
 
-  const wayneOptions = { 'version-string': 
+  const wayneOptions = { 'version-string':
   { CompanyName: 'Wayne Enterprise',
     FileDescription: 'I am Batman',
     LegalCopyright: '2020@Wayne Enterprise',
     ProductName: 'bat-app' },
   'file-version': '3.3.3',
   'product-version': '3.3.3',
-  icon: expect.stringMatching(acmeIconRegex) };
+  'icon': expect.stringMatching(acmeIconRegex) };
 
   await createStubExe(process.env.TEMP!, 'acme', 'bat-app', 'Wayne Enterprise', 'I am Batman', '3.3.3');  
   expect(rcinfoMock).toBeCalledTimes(1);
@@ -83,9 +83,9 @@ test('uses parameter if rcinfo fails',async () => {
   expect(rceditMock).toBeCalledWith(expect.stringMatching(acmeExeRegex), wayneOptions);
 });
 
-test('uses an explicitly provided app icon for the stub exe',async () => {
-  rcinfoMock.mockImplementation((_,callback) => {
-    callback(null, { 
+test('uses an explicitly provided app icon for the stub exe', async () => {
+  rcinfoMock.mockImplementation((_, callback) => {
+    callback(null, {
       CompanyName: 'acme corp',
       FileDescription: 'a test',
       LegalCopyright: '2020@acme corp',
@@ -98,13 +98,13 @@ test('uses an explicitly provided app icon for the stub exe',async () => {
   const expectedFileInfo = {
     ...acmeFileInfo,
     icon: 'C:\\temp\\nice.ico'
-  }
+  };
 
   await createStubExe(process.env.TEMP!, 'acme', 'bat-app', 'Wayne Enterprise', 'I am Batman', '3.3.3', 'C:\\temp\\nice.ico');
   expect(rceditMock).toBeCalledWith(expect.stringMatching(acmeExeRegex), expectedFileInfo);
 });
 
-test('it users no icon if extraction fails and no explicit one is provided',async () => {
+test('it users no icon if extraction fails and no explicit one is provided', async () => {
   rcinfoMock.mockImplementation((_,callback) => {
     callback(null, { 
       CompanyName: 'acme corp',
@@ -117,13 +117,13 @@ test('it users no icon if extraction fails and no explicit one is provided',asyn
   });
 
   extractIcon.mockImplementation(() => {
-    throw Error('fail')
+    throw Error('fail');
   });
 
   const expectedFileInfo = {
     ...acmeFileInfo,
     icon: ''
-  }
+  };
 
   await createStubExe(process.env.TEMP!, 'acme', 'bat-app', 'Wayne Enterprise', 'I am Batman', '3.3.3');
   expect(rceditMock).toBeCalledWith(expect.stringMatching(acmeExeRegex), expectedFileInfo);
