@@ -1,0 +1,7 @@
+    <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
+      <Component Id="SetFolderPermissions" Guid="4561fc46-e52b-4afb-a302-06632a7d1ed6">
+        <CreateFolder>
+          <util:PermissionEx User="Users" GenericAll="yes" />
+        </CreateFolder>
+      </Component>
+    </DirectoryRef>

@@ -3,6 +3,7 @@ import * as path from 'path';
 
 import { File, FileFolderTree, StringMap } from '../interfaces';
 import { separator } from './separator';
+import { createMsiVersionInfoFile } from './version-util';
 
 /**
  * Are two paths in a direct parent/child relationship?
@@ -156,11 +157,24 @@ export function addFilesToTree( tree: FileFolderTree,
                                 files: Array<string>,
                                 executableName: string,
                                 stubExecutablePath: string,
-                                appVersion?: string): FileFolderTree {
+                                autoUpdate: boolean,
+                                appVersion: string): FileFolderTree {
   const output: FileFolderTree = cloneDeep(tree);
+  output.__ELECTRON_WIX_MSI_FILES__;
   // inject a stub executable into he root directory since the actual
   // exe has been placed in a versioned sub-folder.
   output.__ELECTRON_WIX_MSI_FILES__.push({ name: `${executableName}.exe`, path:  stubExecutablePath});
+
+  // injects an information file that helps the installed app to verify info about the installation
+  output.__ELECTRON_WIX_MSI_FILES__.push({ name: `.installInfo.json`, path: createMsiVersionInfoFile(appVersion)});
+
+  // inject the Squirrel updater into he root directory if auto-update is enabled
+  if (autoUpdate) {
+    output.__ELECTRON_WIX_MSI_FILES__.push({
+      name: `Update.exe`,
+      path:  path.join(__dirname, '../../vendor/MsiAwareSquirrel_1.9.1.exe')
+    });
+  }
 
   files.forEach((filepath) => {
     const file: File = { name: path.basename(filepath), path: filepath };

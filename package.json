@@ -3,7 +3,7 @@
   "version": "2.2.0",
   "description": "Creates an MSI installer for your Electron app",
   "license": "MIT",
-  "repository": "",
+  "repository": "https://github.com/felixrieseberg/electron-wix-msi",
   "author": {
     "name": "Felix Rieseberg",
     "email": "felix@felixrieseberg.com",
@@ -51,7 +51,7 @@
     "jest": "^25.1.0",
     "jest-environment-node-debug": "^2.0.0",
     "mock-fs": "^4.10.4",
-    "ts-jest": "^24.3.0",
+    "ts-jest": "^25.1.0",
     "tslint": "^5.20.1",
     "typescript": "^3.7.2"
   },

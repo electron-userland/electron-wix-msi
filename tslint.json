@@ -16,6 +16,7 @@
       "no-console": false,
       "trailing-comma": false,
       "no-unused-expression": false,
-      "object-literal-sort-keys": false
+      "object-literal-sort-keys": false,
+      "object-literal-key-quotes": [true, "as-needed"]
   }
 }
