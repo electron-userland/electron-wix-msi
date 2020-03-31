@@ -9,7 +9,3 @@ export function overridePlatform(platform: string) {
     value: platform
   });
 }
-
-export function isInTestMode() {
-  return !!process.argv.find((x) => x.includes('jest'));
-}

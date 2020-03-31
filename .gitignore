@@ -1,6 +1,6 @@
 node_modules
 lib
 coverage
-harness/out/*
-e2e/out/*
+harness/out*/*
+e2e/out*/*
 .DS_Store

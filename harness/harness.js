@@ -17,14 +17,17 @@ async function harness() {
     exe: 'HelloWix.exe',
     manufacturer: 'Wix Technologies',
     name: 'HelloWix',
-    appIconPath: path.join(APP_DIR, 'HelloWix.ico'),
+    appIconPath: path.join(APP_DIR, '../HelloWix.ico'),
     outputDirectory: OUT_DIR,
     description: 'A hello wix package',
     ui: {
       chooseDirectory: true
     },
     version: '1.2.3-beta',
-    upgradeCode: '90E8ABD6-B284-4495-81F7-4913E25A6FA3'
+    upgradeCode: '90E8ABD6-B284-4495-81F7-4913E25A6FA3',
+    features: {
+      autoUpdate: true
+    },
   });
 
   await clean();
