@@ -1,4 +1,5 @@
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" 
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/product.html -->
   <Product Id="*" UpgradeCode="{{UpgradeCode}}"
           Name="{{ApplicationName}}"
@@ -42,7 +43,7 @@
 
     <!-- Step 2: Add files and directories -->
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <!-- Installation files to %PROGRAMFILES% -->
+       <!-- Installation files to %PROGRAMFILES% -->
       <Directory Id="{{ProgramFilesFolder}}">
 <!-- {{Directories}} -->
       </Directory>
@@ -93,11 +94,16 @@
       </Component>
     </DirectoryRef>
 
-    <!-- Step 5: Tell WiX to install the files -->
-    <Feature Id="MainApplication" Title="Main Application" Level="1">
+<!-- {{AutoUpdatePermissions}} -->
+
+    <Feature Id='Complete' Title='{{ApplicationName}} {{Version}}' Description='The complete package.' Display='expand' Level='1' {{ConfigurableDirectory}}>
+      <!-- Step 5: Tell WiX to install the files -->
+      <Feature Id="MainApplication" Title="Main Application" Level="1" Display='expand'>
 <!-- {{ComponentRefs}} -->
-      <ComponentRef Id="ApplicationShortcut" />
-      <ComponentRef Id="DesktopShortcut" />
-    </Feature>
+        <ComponentRef Id="ApplicationShortcut" />
+        <ComponentRef Id="DesktopShortcut" />
+      </Feature> 
+<!-- {{AutoUpdateFeature}} -->
+    </Feature> 
   </Product>
 </Wix>

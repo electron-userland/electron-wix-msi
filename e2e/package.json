@@ -11,14 +11,8 @@
   },
   "author": "Jan Hannemann",
   "license": "MIT",
-  "dependencies": {
-    "fs-extra": "^8.1.0",
-    "klaw": "^3.0.0",
-    "lodash": "^4.17.15",
-    "rcinfo": "^0.1.3",
-    "semver": "^6.3.0",
-    "typescript": "^3.7.5"
-  },
+  "repository": "https://github.com/felixrieseberg/electron-wix-msi",
+  "dependencies": {},
   "devDependencies": {
     "@types/debug": "4.1.5",
     "@types/expect.js": "^0.3.29",
@@ -31,12 +25,21 @@
     "@types/node-powershell": "^3.1.1",
     "@types/ps-list": "^6.2.1",
     "@types/semver": "^6.2.0",
+    "@types/serve-handler": "^6.1.0",
+    "fs-extra": "^8.1.0",
+    "klaw": "^3.0.0",
+    "lodash": "^4.17.15",
+    "rcinfo": "^0.1.3",
+    "semver": "^6.3.0",
+    "serve": "^11.3.0",
+    "typescript": "^3.7.5",
     "expect.js": "^0.3.1",
     "hasha": "^5.2.0",
     "mocha": "^7.0.1",
     "node-powershell": "^4.0.0",
     "ps-list": "^7.0.0",
     "spawn-rx": "^3.0.0",
-    "tslint": "^5.20.1"
+    "tslint": "^5.20.1",
+    "electron-winstaller": "4.0.0"
   }
 }

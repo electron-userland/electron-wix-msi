@@ -118,7 +118,7 @@ test('.wxs file has content', () => {
   expect(wxsContent.length).toBeGreaterThan(50);
 });
 
-testIncludes('the root element', '<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">');
+testIncludes('the root element', '<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"');
 
 testIncludes('a package element', '<Package');
 
@@ -133,9 +133,9 @@ regexTestIncludes('versioned app folder', /<Directory\s*Id=".*"\s*Name="app-1\.0
 regexTestIncludes('stubbed exe', /<File\s*Name="acme\.exe"\s*Id=".*"\s*Source="C:\\Stub\.exe"/);
 
 test('.wxs file has as many components as we have files', () => {
-  // Files + Shortcut + StubExecutable
+  // Files + Shortcut + StubExecutable + installInfo file
   const count = wxsContent.split('</Component>').length - 1;
-  expect(count).toEqual(numberOfFiles + 2);
+  expect(count).toEqual(numberOfFiles + 3);
 });
 
 test('MSICreator create() creates Wix file with UI properties', async () => {
@@ -373,8 +373,6 @@ test('MSICreator create() creates x86 version by default', async () => {
 
   const { wxsFile } = await msiCreator.create();
   wxsContent = await fs.readFile(wxsFile, 'utf-8');
-  console.log(wxsFile);
-  console.log(wxsContent);
   expect(wxsFile).toBeTruthy();
 });
 testIncludes('32 bit package declaration', 'Platform="x86"');
@@ -422,4 +420,33 @@ test('MSICreator create() shortcut name override', async () => {
   expect(wxsFile).toBeTruthy();
 });
 testIncludes('Custom shortcut name', '<Shortcut Id="ApplicationStartMenuShortcut" Name="BeepBeep"');
+
+describe('auto-updater', () => {
+  test('MSICreator includes Auto-Updater feature', async () => {
+    const msiCreator = new MSICreator({ ...defaultOptions, features: {autoUpdate: true }});
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    expect(wxsFile).toBeTruthy();
+  });
+
+  test('.wxs file has as many components as we have files', () => {
+    // Files + Shortcut + StubExecutable + installInfo file + Update.exe + Permission Component
+    const count = wxsContent.split('</Component>').length - 1;
+    expect(count).toEqual(numberOfFiles + 5);
+  });
+
+  test('.wxs file contains as many component refs as components', () => {
+    const componentCount = wxsContent.split('</Component>').length - 1;
+    const refCount = wxsContent.split('<ComponentRef').length - 1;
+    expect(componentCount).toEqual(refCount);
+  });
+
+  regexTestIncludes('Squirrel executable component', /<Component Id="_MsiAwareSquirrel_1.9.1.exe_.*"/);
+  testIncludes('Permission component',  `<Component Id="SetFolderPermissions"`);
+
+  testIncludes('AutoUpdater feature',  `<Feature Id="AutoUpdater" Title="Auto Updater" Level="2">`);
+  regexTestIncludes('Squirrel executable component-ref', /<ComponentRef Id="_MsiAwareSquirrel_1.9.1.exe_.*" \/>/ );
+  testIncludes('Permission component-ref',  `<ComponentRef Id="SetFolderPermissions" />`);
+});
+
 

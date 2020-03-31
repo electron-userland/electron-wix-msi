@@ -1,0 +1,4 @@
+      <Feature Id="AutoUpdater" Title="Auto Updater" Level="2">
+        <!-- {{UpdaterComponentRefs}} -->
+        <ComponentRef Id="SetFolderPermissions" />
+      </Feature>

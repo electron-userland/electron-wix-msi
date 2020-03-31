@@ -1,5 +1,7 @@
+import * as fs from 'fs-extra';
 import * as semver from 'semver';
-import { isNumber } from 'util';
+
+import { getTempFilePath } from './fs-helper';
 
 function isWindowsCompliant(version: string): boolean {
   const versionArray = version.split('.');
@@ -34,4 +36,10 @@ export function getWindowsCompliantVersion(input: string): string {
   } else {
     throw new Error('Could not parse semantic version input string');
   }
+}
+
+export function createMsiVersionInfoFile(version: string): string {
+  const { tempFilePath } = getTempFilePath('.installInfo', 'json');
+  fs.writeJSONSync(tempFilePath, { baseVersion: version });
+  return tempFilePath;
 }

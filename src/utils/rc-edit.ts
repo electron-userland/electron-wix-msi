@@ -3,6 +3,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as rcedit from 'rcedit';
 import * as rcinfo from 'rcinfo';
+import { getTempFilePath } from './fs-helper';
 
 interface RcInfo {
   'version-string': {
@@ -45,17 +46,13 @@ export async function createStubExe(appDirectory: string,
                                     icon?: string,
                                     ): Promise<string> {
 
-  const tempPath = process.env.TEMP || process.env.TMPDIR || '/tmp';
-  const appTempFolder = await fs.mkdtemp(exe);
-  const tempFolder = path.join(tempPath, appTempFolder);
-  await fs.mkdir(tempFolder);
-  const subbedExePath = path.join(tempFolder, `${exe}.exe`);
+  const { tempFolderPath, tempFilePath } = getTempFilePath(exe, 'exe');
   const stubPath = path.join(__dirname, '../../vendor/StubExecutable.exe');
-  await fs.copyFile(stubPath, subbedExePath);
+  await fs.copyFile(stubPath, tempFilePath);
   const appExe = path.join(appDirectory, `${exe}.exe`);
   let appIconPath: string | undefined;
   if (!icon) {
-    appIconPath = await extractIconFromApp(appExe, path.join(tempFolder));
+    appIconPath = await extractIconFromApp(appExe, path.join(tempFolderPath));
   }
 
   let rcOptions: any;
@@ -75,9 +72,9 @@ export async function createStubExe(appDirectory: string,
     },
     'file-version':  rcInfo?.FileVersion || version,
     'product-version': rcInfo?.ProductVersion || version,
-    'icon': icon || appIconPath
+    icon: icon || appIconPath
   };
 
-  await rcedit(subbedExePath, rcOptions);
-  return subbedExePath;
+  await rcedit(tempFilePath, rcOptions);
+  return tempFilePath;
 }

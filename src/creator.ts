@@ -39,6 +39,7 @@ export interface MSICreatorOptions {
   certificateFile?: string;
   certificatePassword?: string;
   arch?: 'x64' | 'ia64'| 'x86';
+  features?: Features | false;
 }
 
 export interface UIOptions {
@@ -56,6 +57,10 @@ export interface UIImages {
   upIcon?: string;            // WixUIUpIco
 }
 
+export interface Features {
+  autoUpdate: boolean;
+}
+
 export class MSICreator {
   // Default Templates
   public componentTemplate = getTemplate('component');
@@ -63,8 +68,9 @@ export class MSICreator {
   public directoryTemplate = getTemplate('directory');
   public wixTemplate = getTemplate('wix');
   public uiTemplate = getTemplate('ui');
-  public uiDirTemplate = getTemplate('ui-choose-dir');
   public propertyTemplate = getTemplate('property');
+  public updaterTemplate = getTemplate('updater-feature');
+  public updaterPermissions = getTemplate('updater-permissions');
 
   // State, overwritable beteween steps
   public wxsFile: string = '';
@@ -92,6 +98,7 @@ export class MSICreator {
   public certificatePassword?: string;
   public signWithParams?: string;
   public arch: 'x64' | 'ia64'| 'x86' = 'x86';
+  public autoUpdate: boolean;
 
   public ui: UIOptions | boolean;
 
@@ -127,6 +134,10 @@ export class MSICreator {
       || `com.squirrel.${this.shortName}.${this.exe}`;
 
     this.ui = options.ui !== undefined ? options.ui : false;
+    this.autoUpdate = false;
+    if (typeof options.features === 'object' && options.features !== null) {
+      this.autoUpdate = options.features.autoUpdate;
+    }
   }
 
   /**
@@ -189,12 +200,21 @@ export class MSICreator {
     const base = path.basename(this.appDirectory);
     const directories = await this.getDirectoryForTree(
       this.tree!, base, 8, this.programFilesFolderName, ROOTDIR_NAME);
-    const componentRefs = await this.getComponentRefs();
+    const componentRefs = await this.getMainAppComponentRefs();
+    const updaterComponentRefs = await this.getUpdaterComponentRefs();
+    let enableChooseDirectory = false;
+    if (typeof this.ui === 'object' && this.ui !== 'null') {
+      const { chooseDirectory } = this.ui;
+      enableChooseDirectory = chooseDirectory || false;
+    }
 
     const scaffoldReplacements = {
       '<!-- {{ComponentRefs}} -->': componentRefs.map(({ xml }) => xml).join('\n'),
       '<!-- {{Directories}} -->': directories,
-      '<!-- {{UI}} -->': this.getUI()
+      '<!-- {{UI}} -->': this.getUI(),
+      '<!-- {{AutoUpdatePermissions}} -->': this.autoUpdate ? this.updaterPermissions : '',
+      '<!-- {{AutoUpdateFeature}} -->': this.autoUpdate ? this.updaterTemplate : '',
+      '<!-- {{UpdaterComponentRefs}} -->': updaterComponentRefs.map(({ xml }) => xml).join('\n'),
     };
 
     const replacements = {
@@ -214,7 +234,8 @@ export class MSICreator {
       '{{ProgramFilesFolder}}': this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
       '{{ProcessorArchitecture}}' : this.arch,
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
-      '{{DesktopShortcutGuid}}': uuid()
+      '{{DesktopShortcutGuid}}': uuid(),
+      '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
     };
 
     const completeTemplate = replaceInString(this.wixTemplate, scaffoldReplacements);
@@ -259,6 +280,10 @@ export class MSICreator {
 
     if (this.ui && !this.extensions.find((e) => e === 'WixUIExtension')) {
       this.extensions.push('WixUIExtension');
+    }
+
+    if (!this.extensions.find((e) => e === 'WixUtilExtension')) {
+      this.extensions.push('WixUtilExtension');
     }
 
     const preArgs = flatMap(this.extensions.map((e) => (['-ext', e])));
@@ -325,12 +350,9 @@ export class MSICreator {
     }
 
     if (typeof this.ui === 'object' && this.ui !== 'null') {
-      const { images, template, chooseDirectory } = this.ui;
+      const { template } = this.ui;
       const propertiesXml = this.getUIProperties(this.ui);
-      const uiTemplate = template || (chooseDirectory
-        ? this.uiDirTemplate
-        : this.uiTemplate);
-
+      const uiTemplate = template || this.uiTemplate;
       xml = replaceInString(uiTemplate, {
         '<!-- {{Properties}} -->': propertiesXml
       });
@@ -400,12 +422,13 @@ export class MSICreator {
 
     const children: string = [childDirectories.join('\n'), childFiles.join('\n')].join('');
 
-    return replaceInString(this.directoryTemplate, {
+    const directoryXml = replaceInString(this.directoryTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
       '{{DirectoryId}}': id || this.getComponentId(treePath),
       '{{DirectoryName}}': name,
       '<!-- {{Children}} -->': children
     });
+    return `${directoryXml}${childDirectories.length > 0 && !id ? '\n' : ''}`;
   }
 
   /**
@@ -424,24 +447,49 @@ export class MSICreator {
                                         this.iconPath);
 
     const folderTree = arrayToTree(this.directories, root, this.semanticVersion);
-    const fileFolderTree = addFilesToTree(folderTree, this.files, this.exe, stubExe, this.semanticVersion);
+    const fileFolderTree = addFilesToTree(folderTree,
+                                          this.files,
+                                          this.exe,
+                                          stubExe,
+                                          this.autoUpdate,
+                                          this.semanticVersion);
 
     return fileFolderTree;
   }
 
   /**
-   * Creates Wix <ComponentRefs> for all components.
+   * Creates Wix MainApp <ComponentRefs> components.
    *
    * @returns {<Array<ComponentRef>}
    */
-  private getComponentRefs(): Array<ComponentRef> {
-    return this.components.map(({ componentId }) => {
-      const xml = replaceInString(this.componentRefTemplate, {
-        '<!-- {{I}} -->': '      ',
-        '{{ComponentId}}': componentId
-      });
+  private getMainAppComponentRefs(): Array<ComponentRef> {
+    return this.components
+      .filter((c) => c.file.name !== 'Update.exe')
+      .map(({ componentId }) => {
+        const xml = replaceInString(this.componentRefTemplate, {
+          '<!-- {{I}} -->': '        ',
+          '{{ComponentId}}': componentId
+        });
 
-      return { componentId, xml };
+        return { componentId, xml };
+    });
+  }
+
+  /**
+   * Creates auto-update <ComponentRefs> components.
+   *
+   * @returns {<Array<ComponentRef>}
+   */
+  private getUpdaterComponentRefs(): Array<ComponentRef> {
+    return this.components
+      .filter((c) => c.file.name === 'Update.exe')
+      .map(({ componentId }) => {
+        const xml = replaceInString(this.componentRefTemplate, {
+          '<!-- {{I}} -->': '',
+          '{{ComponentId}}': componentId
+        });
+
+        return { componentId, xml };
     });
   }
 
