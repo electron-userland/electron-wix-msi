@@ -5,7 +5,7 @@ import path from 'path';
 import { getWindowsCompliantVersion } from '../../lib/utils/version-util';
 import { expectSameFolderContent } from './common';
 import { getProcessPath, kill, launch, runs } from './utils/app-process';
-import { autoUpdate, checkInstall, getInstallPaths, install, uninstallViaPowershell } from './utils/installer';
+import { autoUpdate, checkInstall, getInstallPaths, install, uninstallViaPowershell, uninstall } from './utils/installer';
 import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
 import { createSquirrelPackage, defaultSquirrelOptions, OUT_SQRL_DIR } from './utils/squirrel-packager';
 import { serveSquirrel, stopServingSquirrel } from './utils/squirrel-server';
@@ -30,14 +30,6 @@ describe('MSI auto-updating', () => {
     if (await checkInstall(defaultMsiOptions.name)) {
       await uninstallViaPowershell(defaultMsiOptions.name);
     }
-  });
-
-  after(async () => {
-    if (await checkInstall(defaultMsiOptions.name)) {
-      await uninstallViaPowershell(defaultMsiOptions.name);
-    }
-    // temporary needed till we completely cleanup in an uninstall scenario
-    fs.removeSync(msiPaths123beta.appRootFolder);
   });
 
   it('packages', async () => {
@@ -96,5 +88,13 @@ describe('MSI auto-updating', () => {
       expect(await getProcessPath(msiOptions.exe)).to.be(squirrelPaths130.appExe);
       await kill(msiOptions.exe);
      });
+  });
+
+  it('uninstalls', async () => {
+    await uninstall(msiPath);
+    expect(await checkInstall(msiOptions.name)).not.ok();
+    expect(fs.pathExistsSync(msiPaths123beta.appRootFolder)).not.ok();
+    expect(fs.pathExistsSync(msiPaths123beta.startMenuShortcut)).not.ok();
+    expect(fs.pathExistsSync(msiPaths123beta.desktopShortcut)).not.ok();
   });
 });
