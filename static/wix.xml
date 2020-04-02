@@ -25,6 +25,12 @@
     <!-- Overrides the default reboot behavior if files are in use during the upgrade.
      This way no unpxecpted reboot will happpen.-->
     <Property Id="REBOOT" Value="ReallySuppress" />
+    <!-- A property that holds the intall path and is needed to delete all files on
+    uninstall, even if they are not wriiten as part of this MSI. The value comes from a 
+    registry we set on install.-->
+    <Property Id="INSTALLPATH">
+      <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}" Root="HKLM" Type="raw" Id="INSTALLPATH_REGSEARCH" Name="InstallPath" />
+    </Property>
     
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
 
@@ -95,6 +101,15 @@
     </DirectoryRef>
 
 <!-- {{AutoUpdatePermissions}} -->
+    
+    <!-- Lets cleanup any files that are were not part of the initial install
+    via this MSI. Such as newer versions installed by the auto-updater. -->
+    <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
+      <Component Id="PurgeOnUninstall" Guid="9c034d1f-e0e7-42f8-92b0-40e7d895217c" Win64="{{Win64YesNo}}">
+        <CreateFolder/>
+        <util:RemoveFolderEx On="uninstall" Property="INSTALLPATH" />
+      </Component>
+    </DirectoryRef>
 
     <Feature Id='Complete' Title='{{ApplicationName}} {{Version}}' Description='The complete package.' Display='expand' Level='1' {{ConfigurableDirectory}}>
       <!-- Step 5: Tell WiX to install the files -->
@@ -102,6 +117,7 @@
 <!-- {{ComponentRefs}} -->
         <ComponentRef Id="ApplicationShortcut" />
         <ComponentRef Id="DesktopShortcut" />
+        <ComponentRef Id="PurgeOnUninstall" />
       </Feature> 
 <!-- {{AutoUpdateFeature}} -->
     </Feature> 

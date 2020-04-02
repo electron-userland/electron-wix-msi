@@ -91,6 +91,7 @@ export function isChild(parent: string, possibleChild: string): boolean {
 export function arrayToTree(input: Array<string>, root: string, appVersion?: string ): FileFolderTree {
   const output: FileFolderTree = {
     __ELECTRON_WIX_MSI_FILES__: [],
+    __ELECTRON_WIX_MSI_REGISTRY__: [],
     __ELECTRON_WIX_MSI_PATH__: root,
     __ELECTRON_WIX_MSI_DIR_NAME__: path.basename(root)
    };
@@ -99,6 +100,7 @@ export function arrayToTree(input: Array<string>, root: string, appVersion?: str
   if (appVersion) {
     const versionNode  = {
       __ELECTRON_WIX_MSI_FILES__: [],
+      __ELECTRON_WIX_MSI_REGISTRY__: [],
       __ELECTRON_WIX_MSI_PATH__: root,
       __ELECTRON_WIX_MSI_DIR_NAME__: `app-${appVersion}` };
     output[`app-${appVersion}`] = versionNode;
@@ -167,6 +169,17 @@ export function addFilesToTree( tree: FileFolderTree,
 
   // injects an information file that helps the installed app to verify info about the installation
   output.__ELECTRON_WIX_MSI_FILES__.push({ name: `.installInfo.json`, path: createMsiVersionInfoFile(appVersion)});
+
+  // On install we need to keep track of our install folder.
+  // We then can utilize that registry value to purge our install folder on uninstall.
+  output.__ELECTRON_WIX_MSI_REGISTRY__.push({
+    id: 'RegistryInstallPath',
+    root: 'HKLM',
+    name: 'InstallPath',
+    key: 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationName}}',
+    type: 'string',
+    value: '[APPLICATIONROOTDIRECTORY]'
+  });
 
   // inject the Squirrel updater into he root directory if auto-update is enabled
   if (autoUpdate) {
