@@ -133,9 +133,9 @@ regexTestIncludes('versioned app folder', /<Directory\s*Id=".*"\s*Name="app-1\.0
 regexTestIncludes('stubbed exe', /<File\s*Name="acme\.exe"\s*Id=".*"\s*Source="C:\\Stub\.exe"/);
 
 test('.wxs file has as many components as we have files', () => {
-  // Files + Shortcut + StubExecutable + installInfo file
+  // Files + 2 Shortcuts + 1 StubExecutable + 1 installInfo file + 2 purge components
   const count = wxsContent.split('</Component>').length - 1;
-  expect(count).toEqual(numberOfFiles + 3);
+  expect(count).toEqual(numberOfFiles + 6);
 });
 
 test('MSICreator create() creates Wix file with UI properties', async () => {
@@ -421,6 +421,13 @@ test('MSICreator create() shortcut name override', async () => {
 });
 testIncludes('Custom shortcut name', '<Shortcut Id="ApplicationStartMenuShortcut" Name="BeepBeep"');
 
+testIncludes('Install path property', '<Property Id="INSTALLPATH">');
+testIncludes('Install RegistrySearch', '<RegistrySearch Key="SOFTWARE\\Acme Technologies\\Acme" Root="HKLM" Type="raw" Id="INSTALLPATH_REGSEARCH" Name="InstallPath" />');
+testIncludes('RegistryInstallPath component',  '<Component Id="RegistryInstallPath"');
+testIncludes('RegistryInstallPath component-ref',  '<ComponentRef Id="RegistryInstallPath" />');
+testIncludes('PurgeOnUninstall component',  '<Component Id="PurgeOnUninstall" ');
+testIncludes('PurgeOnUninstall component-ref',  '<ComponentRef Id="PurgeOnUninstall" />');
+
 describe('auto-updater', () => {
   test('MSICreator includes Auto-Updater feature', async () => {
     const msiCreator = new MSICreator({ ...defaultOptions, features: {autoUpdate: true }});
@@ -430,9 +437,9 @@ describe('auto-updater', () => {
   });
 
   test('.wxs file has as many components as we have files', () => {
-    // Files + Shortcut + StubExecutable + installInfo file + Update.exe + Permission Component
+    // Files + 2 Shortcuts + StubExecutable + installInfo file + Update.exe + Permission Component + 2 purge components
     const count = wxsContent.split('</Component>').length - 1;
-    expect(count).toEqual(numberOfFiles + 5);
+    expect(count).toEqual(numberOfFiles + 8);
   });
 
   test('.wxs file contains as many component refs as components', () => {

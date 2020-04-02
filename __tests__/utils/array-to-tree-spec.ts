@@ -31,34 +31,41 @@ const mockFolderTree = {
   __ELECTRON_WIX_MSI_PATH__: `slack`,
   __ELECTRON_WIX_MSI_DIR_NAME__: 'slack',
   __ELECTRON_WIX_MSI_FILES__: [],
+  __ELECTRON_WIX_MSI_REGISTRY__: [],
   'app-1.0.0' : {
     __ELECTRON_WIX_MSI_PATH__: `slack`,
     __ELECTRON_WIX_MSI_DIR_NAME__: 'app-1.0.0',
     __ELECTRON_WIX_MSI_FILES__: [],
+    __ELECTRON_WIX_MSI_REGISTRY__: [],
     resources: {
       __ELECTRON_WIX_MSI_PATH__: `slack${S}resources`,
       __ELECTRON_WIX_MSI_DIR_NAME__: 'resources',
       __ELECTRON_WIX_MSI_FILES__: [],
+      __ELECTRON_WIX_MSI_REGISTRY__: [],
       'app.asar.unpacked': {
         __ELECTRON_WIX_MSI_PATH__: `slack${S}resources${S}app.asar.unpacked`,
         __ELECTRON_WIX_MSI_DIR_NAME__: 'app.asar.unpacked',
         __ELECTRON_WIX_MSI_FILES__: [],
+        __ELECTRON_WIX_MSI_REGISTRY__: [],
         node_modules: {
           __ELECTRON_WIX_MSI_PATH__: `slack${S}resources${S}app.asar.unpacked${S}node_modules`,
           __ELECTRON_WIX_MSI_DIR_NAME__: 'node_modules',
-          __ELECTRON_WIX_MSI_FILES__: []
+          __ELECTRON_WIX_MSI_FILES__: [],
+          __ELECTRON_WIX_MSI_REGISTRY__: [],
         },
         src: {
           __ELECTRON_WIX_MSI_PATH__: `slack${S}resources${S}app.asar.unpacked${S}src`,
           __ELECTRON_WIX_MSI_DIR_NAME__: 'src',
-          __ELECTRON_WIX_MSI_FILES__: []
+          __ELECTRON_WIX_MSI_FILES__: [],
+          __ELECTRON_WIX_MSI_REGISTRY__: [],
         }
       }
     },
     locales: {
       __ELECTRON_WIX_MSI_PATH__: `slack${S}locales`,
       __ELECTRON_WIX_MSI_DIR_NAME__: 'locales',
-      __ELECTRON_WIX_MSI_FILES__: []
+      __ELECTRON_WIX_MSI_FILES__: [],
+      __ELECTRON_WIX_MSI_REGISTRY__: [],
     }
   }
 };
@@ -67,6 +74,14 @@ const mockFolderFileTree = defaultsDeep(cloneDeep(mockFolderTree), {
   __ELECTRON_WIX_MSI_FILES__:  [ { name: 'slack.exe', path: `C:${S}temp${S}slack.exe` },
     { name: '.installInfo.json',
       path: expect.stringMatching(installInfoRegex) } ],
+  __ELECTRON_WIX_MSI_REGISTRY__: [{
+    id: 'RegistryInstallPath',
+    key: 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationName}}',
+    name: 'InstallPath',
+    root: 'HKLM',
+    type: 'string',
+    value: '[APPLICATIONROOTDIRECTORY]',
+  }],
  __ELECTRON_WIX_MSI_PATH__: 'slack',
   'app-1.0.0' : {
     __ELECTRON_WIX_MSI_FILES__: [{ name: `slack.exe`, path: `slack${S}slack.exe` }],
