@@ -4,7 +4,7 @@ import * as path from 'path';
 export const drive = process.platform === 'win32' ? 'C:' : '/';
 export const root = path.join(drive, 'Users', 'tester', 'Code', 'app');
 export const tmp = path.join(drive, 'tmp');
-export const numberOfFiles = 15;
+export const numberOfFiles = 14;
 
 const staticDir = path.join(__dirname, '../../static');
 const staticContent: Record<string, Record<string, any>> = {};
@@ -28,9 +28,9 @@ fs.readdirSync(vendorDir)
 export function getMockFileSystem() {
   const mockFiles = {
     'locales': {
-      'am.pak': '',
-      'en-GB.pak': '',
-      'de.pak': ''
+      'am.pak': 'hi',
+      'en-GB.pak': 'hi',
+      'de.pak': 'hi'
     },
     'resources': {
       'app.asar.unpacked': {

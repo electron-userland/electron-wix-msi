@@ -4,7 +4,14 @@ import * as path from 'path';
 import * as uuid from 'uuid/v4';
 import { spawnPromise } from './utils/spawn';
 
-import { Component, ComponentRef, Directory, File, FileFolderTree, StringMap } from './interfaces';
+import { Component,
+         ComponentRef,
+         File,
+         FileComponent,
+         FileFolderTree,
+         isFileComponent,
+         Registry,
+         StringMap } from './interfaces';
 import { addFilesToTree, arrayToTree } from './utils/array-to-tree';
 import { hasCandle, hasLight } from './utils/detect-wix';
 import { createStubExe } from './utils/rc-edit';
@@ -63,7 +70,8 @@ export interface Features {
 
 export class MSICreator {
   // Default Templates
-  public componentTemplate = getTemplate('component');
+  public fileComponentTemplate = getTemplate('file-component');
+  public registryComponentTemplate = getTemplate('registry-component');
   public componentRefTemplate = getTemplate('component-ref');
   public directoryTemplate = getTemplate('directory');
   public wixTemplate = getTemplate('wix');
@@ -420,7 +428,17 @@ export class MSICreator {
         return component.xml;
       });
 
-    const children: string = [childDirectories.join('\n'), childFiles.join('\n')].join('');
+    const childRegistry = tree.__ELECTRON_WIX_MSI_REGISTRY__
+    .map((registry) => {
+      const component = this.getRegistryComponent(registry, indent + 2);
+      this.components.push(component);
+      return component.xml;
+    });
+
+    const children: string = [childDirectories.join('\n'),
+      childFiles.join('\n'),
+      childRegistry.length > 0 ? '\n' : '',
+      childRegistry.join('\n')].join('');
 
     const directoryXml = replaceInString(this.directoryTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
@@ -464,7 +482,7 @@ export class MSICreator {
    */
   private getMainAppComponentRefs(): Array<ComponentRef> {
     return this.components
-      .filter((c) => c.file.name !== 'Update.exe')
+      .filter((c) => !isFileComponent(c) || (isFileComponent(c) && c.file.name !== 'Update.exe'))
       .map(({ componentId }) => {
         const xml = replaceInString(this.componentRefTemplate, {
           '<!-- {{I}} -->': '        ',
@@ -482,7 +500,7 @@ export class MSICreator {
    */
   private getUpdaterComponentRefs(): Array<ComponentRef> {
     return this.components
-      .filter((c) => c.file.name === 'Update.exe')
+      .filter((c) => isFileComponent(c) && c.file.name === 'Update.exe')
       .map(({ componentId }) => {
         const xml = replaceInString(this.componentRefTemplate, {
           '<!-- {{I}} -->': '',
@@ -497,12 +515,12 @@ export class MSICreator {
    * Creates Wix <Components> for all files.
    *
    * @param {File}
-   * @returns {Component}
+   * @returns {FileComponent}
    */
-  private getComponent(file: File, indent: number): Component {
+  private getComponent(file: File, indent: number): FileComponent {
     const guid = uuid();
     const componentId = this.getComponentId(file.path);
-    const xml = replaceInString(this.componentTemplate, {
+    const xml = replaceInString(this.fileComponentTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
       '{{ComponentId}}': componentId,
       '{{FileId}}': componentId,
@@ -512,6 +530,27 @@ export class MSICreator {
     });
 
     return { guid, componentId, xml, file };
+  }
+
+  /**
+   * Creates Wix <Components> for all registry values.
+   *
+   * @param {File}
+   * @returns {FileComponent}
+   */
+  private getRegistryComponent(registry: Registry, indent: number): Component {
+    const guid = uuid();
+    const xml = replaceInString(this.registryComponentTemplate, {
+      '<!-- {{I}} -->': padStart('', indent),
+      '{{ComponentId}}': registry.id,
+      '{{Guid}}': guid,
+      '{{Name}}': registry.name,
+      '{{Root}}': registry.root,
+      '{{Key}}': registry.key,
+      '{{Type}}': registry.type,
+      '{{Value}}': registry.value,
+    });
+    return { guid, componentId: registry.id, xml };
   }
 
   /**
