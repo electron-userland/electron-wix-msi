@@ -160,6 +160,7 @@ export function addFilesToTree( tree: FileFolderTree,
                                 executableName: string,
                                 stubExecutablePath: string,
                                 autoUpdate: boolean,
+                                autoLaunch: boolean,
                                 appVersion: string): FileFolderTree {
   const output: FileFolderTree = cloneDeep(tree);
   output.__ELECTRON_WIX_MSI_FILES__;
@@ -186,6 +187,18 @@ export function addFilesToTree( tree: FileFolderTree,
     output.__ELECTRON_WIX_MSI_FILES__.push({
       name: `Update.exe`,
       path:  path.join(__dirname, '../../vendor/MsiAwareSquirrel_1.9.1.exe')
+    });
+  }
+
+  // inject registry Run key into he root directory if auto-launch is enabled
+  if (autoLaunch) {
+    output.__ELECTRON_WIX_MSI_REGISTRY__.push({
+      id: 'RegistryRunKey',
+      root: 'HKLM',
+      name: '{{AppUserModelId}}',
+      key: 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',
+      type: 'string',
+      value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe'
     });
   }
 

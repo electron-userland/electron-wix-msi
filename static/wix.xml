@@ -6,7 +6,7 @@
           Version="{{Version}}"
           Manufacturer="{{Manufacturer}}"
           Language="{{Language}}">
-    <!-- Only run this installer on Windows 7 or up (or if it's already installed, I guess) -->
+    <!-- Only run this installer on Windows 7 or up (or if it"s already installed, I guess) -->
     <!-- <Condition Message="This application is only supported on Windows 7 or higher.">
       <![CDATA[Installed OR (VersionNT >= 601)]]>
     </Condition> -->
@@ -28,6 +28,7 @@
     <!-- A property that holds the intall path and is needed to delete all files on
     uninstall, even if they are not wriiten as part of this MSI. The value comes from a 
     registry we set on install.-->
+    <Property Id="INSTALLLEVEL" Value="2" />
     <Property Id="INSTALLPATH">
       <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}" Root="HKLM" Type="raw" Id="INSTALLPATH_REGSEARCH" Name="InstallPath" />
     </Property>
@@ -65,7 +66,7 @@
 
     <!-- Step 3: Add app to Start Menu -->
     <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="ApplicationShortcut" Guid="{{ApplicationShortcutGuid}}" Win64='{{Win64YesNo}}'>
+      <Component Id="ApplicationShortcut" Guid="{{ApplicationShortcutGuid}}" Win64="{{Win64YesNo}}">
         <Shortcut Id="ApplicationStartMenuShortcut"
                   Name="{{ShortcutName}}"
                   Description="{{ApplicationDescription}}"
@@ -101,7 +102,7 @@
     </DirectoryRef>
 
 <!-- {{AutoUpdatePermissions}} -->
-    
+
     <!-- Lets cleanup any files that are were not part of the initial install
     via this MSI. Such as newer versions installed by the auto-updater. -->
     <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
@@ -111,14 +112,15 @@
       </Component>
     </DirectoryRef>
 
-    <Feature Id='Complete' Title='{{ApplicationName}} {{Version}}' Description='The complete package.' Display='expand' Level='1' {{ConfigurableDirectory}}>
+    <Feature Id="Complete" Title="{{ApplicationName}} ({{Version}})" Description="The complete package." Display="expand" Level="1" {{ConfigurableDirectory}}>
       <!-- Step 5: Tell WiX to install the files -->
-      <Feature Id="MainApplication" Title="Main Application" Level="1" Display='expand'>
+      <Feature Id="MainApplication" Title="Main Application" Level="1" Description="The main components to run the applications." >
 <!-- {{ComponentRefs}} -->
         <ComponentRef Id="ApplicationShortcut" />
         <ComponentRef Id="DesktopShortcut" />
         <ComponentRef Id="PurgeOnUninstall" />
       </Feature> 
+<!-- {{AutoLaunchFeature}} -->
 <!-- {{AutoUpdateFeature}} -->
     </Feature> 
   </Product>
