@@ -21,9 +21,10 @@ export interface InstallPaths {
   startMenuShortcut: string;
   desktopShortcut: string;
   appUserModelId: string;
+  registryRunKey: string;
 }
 
-export const install = async (msi: string, installLevel: 1 | 2 = 1) => {
+export const install = async (msi: string, installLevel: 1 | 2 | 3 = 1) => {
   return spawnPromise('msiexec.exe', ['/i', msi, `INSTALLLEVEL=${installLevel}`, '/qb']);
 };
 
@@ -48,6 +49,23 @@ export const uninstallViaPowershell = async (name: string) => {
     ps.dispose();
   }
 };
+
+export const testXX = async (name: string) => {
+  const ps = new Shell({
+    executionPolicy: 'Bypass',
+    noProfile: true
+  });
+  let result = '';
+  try {
+    ps.addCommand(`Get-ItemPropertyValue 'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run' -Name com.squirrel.HelloWix.HelloWix`);
+    result = await ps.invoke();
+  } finally {
+    ps.dispose();
+  }
+
+  return result;
+};
+
 
 export const checkInstall = async (name: string, version?: string) => {
   const ps = new Shell({
@@ -74,14 +92,14 @@ export const checkInstall = async (name: string, version?: string) => {
 };
 
 export const getInstallPaths = (options: MSICreatorOptions | Options): InstallPaths => {
-  const programFiles = isMSICreatorOptions(options) ?
-    (options.arch === 'x64' || options.arch === 'ia64' ?
-      process.env.ProgramFiles! : process.env['ProgramFiles(x86)']!) :
-      process.env['ProgramFiles(x86)']!;
+  const arch =  isMSICreatorOptions(options) &&
+    (options.arch === 'x64' || options.arch === 'ia64') ? options.arch : 'x86';
+  const programFiles = arch === 'x86' ? process.env['ProgramFiles(x86)']! : process.env.ProgramFiles!;
   const appRootFolder = path.join(programFiles, options.name!);
   const shortName = isMSICreatorOptions(options) ? options.shortName || options.name : options.name;
   const genericAumid = `com.squirrel.${shortName}.${options.exe!.replace(/\.exe$/, '')}`;
   const appUserModelId = isMSICreatorOptions(options) ? options.appUserModelId || genericAumid : genericAumid;
+  const registryRunKey = `HKLM:\\SOFTWARE\\${arch === 'x86' ? 'WOW6432Node\\' : ''}Microsoft\\Windows\\CurrentVersion\\Run`;
   return {
     appRootFolder,
     stubExe: path.join(appRootFolder, options.exe!),
@@ -91,6 +109,7 @@ export const getInstallPaths = (options: MSICreatorOptions | Options): InstallPa
     startMenuShortcut: isMSICreatorOptions(options) ?  path.join(process.env.ProgramData!, `Microsoft/Windows/Start Menu/Programs/${options.shortcutFolderName || options.manufacturer}/${options.shortcutName || options.name}.lnk`) : '',
     desktopShortcut: isMSICreatorOptions(options) ? path.join(process.env.Public!, `Desktop/${options.shortcutName || options.name}.lnk`) : '',
     appUserModelId,
+    registryRunKey
   };
 };
 
