@@ -7,7 +7,7 @@ import { expectSameFolderContent } from './common';
 import { getProcessPath, kill, launch, runs } from './utils/app-process';
 import { checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershell } from './utils/installer';
 import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
-import { getAutoLaunchKey } from './utils/registry';
+import { getRegistryKeyValue } from './utils/registry';
 
 const msiPath = path.join(OUT_DIR, 'HelloWix.msi');
 
@@ -51,7 +51,8 @@ describe('MSI auto-launch', () => {
   });
 
   it('has auto-launch registry key', async () => {
-    autoLaunchRegistryKeyValue = await getAutoLaunchKey(msiPaths123beta.registryRunKey, msiPaths123beta.appUserModelId);
+    autoLaunchRegistryKeyValue = await getRegistryKeyValue(msiPaths123beta.registryRunKey,
+      msiPaths123beta.appUserModelId);
     expect(autoLaunchRegistryKeyValue).to.be(msiPaths123beta.stubExe);
   });
 

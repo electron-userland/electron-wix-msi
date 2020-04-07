@@ -479,5 +479,5 @@ describe('auto-launch', () => {
 
   testIncludes('RegistryRunKey component', '<Component Id="RegistryRunKey"');
   testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
-  regexTestIncludes('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch on login" Level="2" .*>/);
+  regexTestIncludes('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
 });
