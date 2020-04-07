@@ -430,7 +430,7 @@ testIncludes('PurgeOnUninstall component-ref',  '<ComponentRef Id="PurgeOnUninst
 
 describe('auto-updater', () => {
   test('MSICreator includes Auto-Updater feature', async () => {
-    const msiCreator = new MSICreator({ ...defaultOptions, features: {autoUpdate: true }});
+    const msiCreator = new MSICreator({ ...defaultOptions, features: {autoUpdate: true, autoLaunch: false }});
     const { wxsFile } = await msiCreator.create();
     wxsContent = await fs.readFile(wxsFile, 'utf-8');
     expect(wxsFile).toBeTruthy();
@@ -451,9 +451,33 @@ describe('auto-updater', () => {
   regexTestIncludes('Squirrel executable component', /<Component Id="_MsiAwareSquirrel_1.9.1.exe_.*"/);
   testIncludes('Permission component',  `<Component Id="SetFolderPermissions"`);
 
-  testIncludes('AutoUpdater feature',  `<Feature Id="AutoUpdater" Title="Auto Updater" Level="2">`);
+  regexTestIncludes('AutoUpdater feature', /<Feature Id="AutoUpdater" Title="Auto Updater" Level="3" .*>/);
   regexTestIncludes('Squirrel executable component-ref', /<ComponentRef Id="_MsiAwareSquirrel_1.9.1.exe_.*" \/>/ );
   testIncludes('Permission component-ref',  `<ComponentRef Id="SetFolderPermissions" />`);
 });
 
+describe('auto-launch', () => {
+  test('MSICreator includes Auto-Updater feature', async () => {
+    const msiCreator = new MSICreator({ ...defaultOptions, features: {autoUpdate: false, autoLaunch: true }});
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    console.log(wxsContent);
+    expect(wxsFile).toBeTruthy();
+  });
 
+  test('.wxs file has as many components as we have files', () => {
+    // Files + 2 Shortcuts + StubExecutable + installInfo file + 2 purge components + run key
+    const count = wxsContent.split('</Component>').length - 1;
+    expect(count).toEqual(numberOfFiles + 7);
+  });
+
+  test('.wxs file contains as many component refs as components', () => {
+    const componentCount = wxsContent.split('</Component>').length - 1;
+    const refCount = wxsContent.split('<ComponentRef').length - 1;
+    expect(componentCount).toEqual(refCount);
+  });
+
+  testIncludes('RegistryRunKey component', '<Component Id="RegistryRunKey"');
+  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
+  regexTestIncludes('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
+});

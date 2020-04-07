@@ -165,7 +165,7 @@ test(`arrayToTree() creates a tree structure`, () => {
 });
 
 test(`addFilesToTree() adds files to a tree structure`, () => {
-  const folderFileTree = addFilesToTree(mockFolderTree, mockFiles, `slack`, `C:${S}temp${S}slack.exe`, false, '1.0.0');
+  const folderFileTree = addFilesToTree(mockFolderTree, mockFiles, `slack`, `C:${S}temp${S}slack.exe`, false, false, '1.0.0');
   expect(folderFileTree).toEqual(mockFolderFileTree);
 });
 
@@ -178,6 +178,6 @@ test(`addFilesToTree() adds files to a tree structure on Mac`, () => {
     path:  expect.stringMatching(msiAwareSquirrelRegex)
   } ];
   const folderFileTree =
-    addFilesToTree(mockFolderTree, mockFiles, `slack`, `C:${S}temp${S}slack.exe`, true, '1.0.0');
+    addFilesToTree(mockFolderTree, mockFiles, `slack`, `C:${S}temp${S}slack.exe`, true, false, '1.0.0');
   expect(folderFileTree).toEqual(updaterMockFolderFileTree);
 });

@@ -19,7 +19,15 @@ import { replaceInString, replaceToFile } from './utils/replace';
 import { getWindowsCompliantVersion } from './utils/version-util';
 import { getDirectoryStructure } from './utils/walker';
 
-const getTemplate = (name: string) => fs.readFileSync(path.join(__dirname, `../static/${name}.xml`), 'utf-8');
+const getTemplate = (name: string, trimTrailingNewLine: boolean = false) => {
+  const content = fs.readFileSync(path.join(__dirname, `../static/${name}.xml`), 'utf-8');
+  if (trimTrailingNewLine) {
+    return content.replace(/[\r\n]+$/g, '');
+  } else {
+    return content;
+  }
+};
+
 const ROOTDIR_NAME = 'APPLICATIONROOTDIRECTORY';
 const debug = require('debug')('electron-wix-msi');
 
@@ -66,6 +74,7 @@ export interface UIImages {
 
 export interface Features {
   autoUpdate: boolean;
+  autoLaunch: boolean;
 }
 
 export class MSICreator {
@@ -75,10 +84,11 @@ export class MSICreator {
   public componentRefTemplate = getTemplate('component-ref');
   public directoryTemplate = getTemplate('directory');
   public wixTemplate = getTemplate('wix');
-  public uiTemplate = getTemplate('ui');
-  public propertyTemplate = getTemplate('property');
-  public updaterTemplate = getTemplate('updater-feature');
+  public uiTemplate = getTemplate('ui', true);
+  public propertyTemplate = getTemplate('property', true);
+  public updaterTemplate = getTemplate('updater-feature', true);
   public updaterPermissions = getTemplate('updater-permissions');
+  public autoLaunchTemplate = getTemplate('auto-launch-feature', true);
 
   // State, overwritable beteween steps
   public wxsFile: string = '';
@@ -107,6 +117,7 @@ export class MSICreator {
   public signWithParams?: string;
   public arch: 'x64' | 'ia64'| 'x86' = 'x86';
   public autoUpdate: boolean;
+  public autoLaunch: boolean;
 
   public ui: UIOptions | boolean;
 
@@ -143,8 +154,10 @@ export class MSICreator {
 
     this.ui = options.ui !== undefined ? options.ui : false;
     this.autoUpdate = false;
+    this.autoLaunch = false;
     if (typeof options.features === 'object' && options.features !== null) {
       this.autoUpdate = options.features.autoUpdate;
+      this.autoLaunch = options.features.autoLaunch;
     }
   }
 
@@ -210,6 +223,7 @@ export class MSICreator {
       this.tree!, base, 8, this.programFilesFolderName, ROOTDIR_NAME);
     const componentRefs = await this.getMainAppComponentRefs();
     const updaterComponentRefs = await this.getUpdaterComponentRefs();
+    const autoLaunchComponentRefs = await this.getAutoLaunchComponentRefs();
     let enableChooseDirectory = false;
     if (typeof this.ui === 'object' && this.ui !== 'null') {
       const { chooseDirectory } = this.ui;
@@ -220,9 +234,11 @@ export class MSICreator {
       '<!-- {{ComponentRefs}} -->': componentRefs.map(({ xml }) => xml).join('\n'),
       '<!-- {{Directories}} -->': directories,
       '<!-- {{UI}} -->': this.getUI(),
-      '<!-- {{AutoUpdatePermissions}} -->': this.autoUpdate ? this.updaterPermissions : '',
-      '<!-- {{AutoUpdateFeature}} -->': this.autoUpdate ? this.updaterTemplate : '',
+      '<!-- {{AutoUpdatePermissions}} -->': this.autoUpdate ? this.updaterPermissions : '{{remove newline}}',
+      '<!-- {{AutoUpdateFeature}} -->': this.autoUpdate ? this.updaterTemplate : '{{remove newline}}',
+      '<!-- {{AutoLaunchFeature}} -->': this.autoLaunch ? this.autoLaunchTemplate : '{{remove newline}}',
       '<!-- {{UpdaterComponentRefs}} -->': updaterComponentRefs.map(({ xml }) => xml).join('\n'),
+      '<!-- {{AutoLaunchComponentRefs}} -->': autoLaunchComponentRefs.map(({ xml }) => xml).join('\n'),
     };
 
     const replacements = {
@@ -244,6 +260,7 @@ export class MSICreator {
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
       '{{DesktopShortcutGuid}}': uuid(),
       '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
+      '\r\n.*{{remove newline}}': ''
     };
 
     const completeTemplate = replaceInString(this.wixTemplate, scaffoldReplacements);
@@ -362,7 +379,7 @@ export class MSICreator {
       const propertiesXml = this.getUIProperties(this.ui);
       const uiTemplate = template || this.uiTemplate;
       xml = replaceInString(uiTemplate, {
-        '<!-- {{Properties}} -->': propertiesXml
+        '<!-- {{Properties}} -->': propertiesXml.length > 0 ? propertiesXml : '{{remove newline}}'
       });
     }
 
@@ -470,6 +487,7 @@ export class MSICreator {
                                           this.exe,
                                           stubExe,
                                           this.autoUpdate,
+                                          this.autoLaunch,
                                           this.semanticVersion);
 
     return fileFolderTree;
@@ -482,7 +500,8 @@ export class MSICreator {
    */
   private getMainAppComponentRefs(): Array<ComponentRef> {
     return this.components
-      .filter((c) => !isFileComponent(c) || (isFileComponent(c) && c.file.name !== 'Update.exe'))
+      .filter((c) => (!isFileComponent(c) && c.componentId !== 'RegistryRunKey') ||
+        (isFileComponent(c) && c.file.name !== 'Update.exe'))
       .map(({ componentId }) => {
         const xml = replaceInString(this.componentRefTemplate, {
           '<!-- {{I}} -->': '        ',
@@ -501,6 +520,19 @@ export class MSICreator {
   private getUpdaterComponentRefs(): Array<ComponentRef> {
     return this.components
       .filter((c) => isFileComponent(c) && c.file.name === 'Update.exe')
+      .map(({ componentId }) => {
+        const xml = replaceInString(this.componentRefTemplate, {
+          '<!-- {{I}} -->': '',
+          '{{ComponentId}}': componentId
+        });
+
+        return { componentId, xml };
+    });
+  }
+
+  private getAutoLaunchComponentRefs(): Array<ComponentRef> {
+    return this.components
+      .filter((c) => !isFileComponent(c) && c.componentId === 'RegistryRunKey')
       .map(({ componentId }) => {
         const xml = replaceInString(this.componentRefTemplate, {
           '<!-- {{I}} -->': '',
