@@ -29,6 +29,10 @@
     uninstall, even if they are not wriiten as part of this MSI. The value comes from a 
     registry we set on install.-->
     <Property Id="INSTALLLEVEL" Value="2" />
+    <!-- Allows to customize the Windows user group that gets access rights on
+    the install folder in cas the auto-updater is installed. User that run the App
+    must be part of that user group to be able to auto-update. -->
+    <Property Id="UPDATERUSERGROUP" Value="Users" />
     <Property Id="INSTALLPATH">
       <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}" Root="HKLM" Type="raw" Id="INSTALLPATH_REGSEARCH" Name="InstallPath" />
     </Property>
