@@ -449,7 +449,10 @@ describe('auto-updater', () => {
   });
 
   regexTestIncludes('Squirrel executable component', /<Component Id="_MsiAwareSquirrel_1.9.1.exe_.*"/);
+
   testIncludes('Permission component',  `<Component Id="SetFolderPermissions"`);
+  testIncludes('PermissionEx call', '<util:PermissionEx User="[UPDATERUSERGROUP]" GenericAll="yes" />');
+  testIncludes('Updater user group property', '<Property Id="UPDATERUSERGROUP" Value="Users" />');
 
   regexTestIncludes('AutoUpdater feature', /<Feature Id="AutoUpdater" Title="Auto Updater" Level="3" .*>/);
   regexTestIncludes('Squirrel executable component-ref', /<ComponentRef Id="_MsiAwareSquirrel_1.9.1.exe_.*" \/>/ );
