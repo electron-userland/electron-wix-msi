@@ -24,8 +24,18 @@ export interface InstallPaths {
   registryRunKey: string;
 }
 
-export const install = async (msi: string, installLevel: 1 | 2 | 3 = 1) => {
-  return spawnPromise('msiexec.exe', ['/i', msi, `INSTALLLEVEL=${installLevel}`, '/qb']);
+export const install = async (msi: string, installLevel: 1 | 2 | 3 = 1, autoUpdaterUserGroup?: string) => {
+  const args = ['/i', msi];
+
+  if (installLevel !== 1) {
+    args.push(`INSTALLLEVEL=${installLevel}`);
+  }
+  if (autoUpdaterUserGroup) {
+    args.push(`UPDATERUSERGROUP=${autoUpdaterUserGroup}`);
+  }
+  args.push('/qb');
+
+  return spawnPromise('msiexec.exe', args);
 };
 
 export const uninstall = async (msi: string) => {
