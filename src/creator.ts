@@ -85,7 +85,7 @@ export class MSICreator {
   public directoryTemplate = getTemplate('directory');
   public wixTemplate = getTemplate('wix');
   public uiTemplate = getTemplate('ui', true);
-  public propertyTemplate = getTemplate('property', true);
+  public wixVariableTemplate = getTemplate('wix-variable', true);
   public updaterTemplate = getTemplate('updater-feature', true);
   public updaterPermissions = getTemplate('updater-permissions');
   public autoLaunchTemplate = getTemplate('auto-launch-feature', true);
@@ -376,10 +376,10 @@ export class MSICreator {
 
     if (typeof this.ui === 'object' && this.ui !== 'null') {
       const { template } = this.ui;
-      const propertiesXml = this.getUIProperties(this.ui);
+      const variablesXml = this.getUIVariables(this.ui);
       const uiTemplate = template || this.uiTemplate;
       xml = replaceInString(uiTemplate, {
-        '<!-- {{Properties}} -->': propertiesXml.length > 0 ? propertiesXml : '{{remove newline}}'
+        '<!-- {{WixVariables}} -->': variablesXml.length > 0 ? variablesXml : '{{remove newline}}'
       });
     }
 
@@ -387,13 +387,13 @@ export class MSICreator {
   }
 
   /**
-   * Returns Wix UI properties
+   * Returns Wix UI variables
    *
    * @returns {string}
    */
-  private getUIProperties(ui: UIOptions): string {
+  private getUIVariables(ui: UIOptions): string {
     const images = ui.images || {};
-    const propertyMap: StringMap<string> = {
+    const variableMap: StringMap<string> = {
       background: 'WixUIDialogBmp',
       banner: 'WixUIBannerBmp',
       exclamationIcon: 'WixUIExclamationIco',
@@ -404,9 +404,9 @@ export class MSICreator {
 
     return Object.keys(images)
       .map((key) => {
-        return propertyMap[key]
-          ? replaceInString(this.propertyTemplate, {
-              '{{Key}}': propertyMap[key],
+        return variableMap[key]
+          ? replaceInString(this.wixVariableTemplate, {
+              '{{Key}}': variableMap[key],
               '{{Value}}': (images as any)[key]
             })
           : '';
