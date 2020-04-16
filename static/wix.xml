@@ -34,7 +34,12 @@
     must be part of that user group to be able to auto-update. -->
     <Property Id="UPDATERUSERGROUP" Value="Users" />
     <Property Id="INSTALLPATH">
-      <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}" Root="HKLM" Type="raw" Id="INSTALLPATH_REGSEARCH" Name="InstallPath" />
+      <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}"
+                      Root="HKLM" 
+                      Type="raw"
+                      Id="INSTALLPATH_REGSEARCH"
+                      Name="InstallPath"
+                      Win64="{{Win64YesNo}}"/>
     </Property>
     
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
