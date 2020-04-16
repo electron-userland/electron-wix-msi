@@ -1,12 +1,13 @@
 import http from 'http';
-import serve from 'serve-handler';
+import * as nodeStatic from 'node-static';
 
+let nodeStaticServer: nodeStatic.Server;
 let server: http.Server;
 
 export const serveSquirrel = (path: string) => {
-  process.chdir(path);
-  server = http.createServer((request, response) => {
-    return serve(request, response);
+  nodeStaticServer = nodeStaticServer || new nodeStatic.Server(path, {cache: false});
+  server = server || http.createServer((request, response) => {
+    nodeStaticServer.serve(request, response);
   });
   server.listen(3000);
   return  'http://localhost:3000';

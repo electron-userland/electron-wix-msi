@@ -2,11 +2,15 @@ import { createWindowsInstaller, Options} from 'electron-winstaller';
 import fs from 'fs-extra';
 import path from 'path';
 
+export interface SquirrelOptions extends Options {
+  arch: 'x64' | 'ia64' | 'x86';
+}
+
 export const OUT_SQRL_DIR = path.join(__dirname, '../../outsqrl');
 
-export const defaultSquirrelOptions = {
+export const defaultSquirrelOptions: SquirrelOptions = {
   appDirectory: path.join(__dirname, '../../../harness/app'),
-  outputDirectory: path.join(__dirname, '../../outsqrl'),
+  outputDirectory: OUT_SQRL_DIR,
   authors: 'Wix Technologies',
   exe: 'HelloWix.exe',
   noMsi: true,
@@ -15,6 +19,11 @@ export const defaultSquirrelOptions = {
   version: '1.2.3-beta',
   title: 'HelloWix',
   description: 'A hello wix package',
+  arch: 'x86'
+};
+
+export const cleanSquirrelOutDir = () => {
+  fs.emptyDirSync(OUT_SQRL_DIR);
 };
 
 export const createSquirrelPackage = async (options: Options) => {

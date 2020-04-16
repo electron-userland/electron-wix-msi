@@ -8,12 +8,16 @@ import { getProcessPath, kill, launch, runs } from './utils/app-process';
 import { autoUpdate, checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershell } from './utils/installer';
 import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
 import { hasAccessRights } from './utils/ntfs';
-import { createSquirrelPackage, defaultSquirrelOptions, OUT_SQRL_DIR } from './utils/squirrel-packager';
+import { cleanSquirrelOutDir, createSquirrelPackage, defaultSquirrelOptions, OUT_SQRL_DIR } from './utils/squirrel-packager';
 import { serveSquirrel, stopServingSquirrel } from './utils/squirrel-server';
+
+interface TestConfig {
+  arch: 'x86' | 'x64';
+}
 
 const msiPath = path.join(OUT_DIR, 'HelloWix.msi');
 
-const msiOptions = {
+const autoUpdateMsiOptions = {
   ...defaultMsiOptions,
   features: {
     autoUpdate: true,
@@ -22,71 +26,88 @@ const msiOptions = {
 };
 const squirrelOptions130 = {
   ...defaultSquirrelOptions,
-  version: '1.3.0'
+  version: '1.3.0',
 };
 
-const msiPaths123beta = getInstallPaths(msiOptions);
-const squirrelPaths130 = getInstallPaths(squirrelOptions130);
-
-
-describe.only('MSI auto-updating', () => {
+describe('MSI auto-updating', () => {
   before(async () => {
     if (await checkInstall(defaultMsiOptions.name)) {
       await uninstallViaPowershell(defaultMsiOptions.name);
     }
   });
 
-  it('packages', async () => {
-    await createMsiPackage(msiOptions);
-    await createSquirrelPackage(defaultSquirrelOptions);
-    await createSquirrelPackage(squirrelOptions130);
-
-    expect(fs.pathExistsSync(msiPath)).ok();
-    expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'RELEASES'))).ok();
-    expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'HelloWix-1.2.3-beta-full.nupkg'))).ok();
-    expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'HelloWix-1.3.0-full.nupkg'))).ok();
-    expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'HelloWix-1.3.0-delta.nupkg'))).ok();
-    expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'Setup.exe'))).ok();
-  });
-
-  const installConfigs = [
-    { userGroup: undefined, effectiveUserGroup: 'Users' },
-    { userGroup: 'Guests', effectiveUserGroup: 'Guests' },
+  const testConfigs: TestConfig[] = [
+    {arch: 'x86'},
+    {arch: 'x64'},
   ];
 
-  installConfigs.forEach((config) => {
-    describe(`install config (userGroup: ${config.effectiveUserGroup})`, () => {
-      it(`installs`, async () => {
+  testConfigs.forEach((testConfig) => {
+    const msiOptions = {
+      ...autoUpdateMsiOptions,
+      ...testConfig
+    };
+
+    const squirrelOptions130Config = {
+      ...squirrelOptions130,
+      ...testConfig
+    };
+
+    const msiPaths123beta = getInstallPaths(msiOptions);
+    const squirrelPaths130 = getInstallPaths(squirrelOptions130Config);
+
+    console.log(msiPaths123beta);
+    console.log(squirrelPaths130);
+
+    it(`packages (${testConfig.arch})`, async () => {
+      await createMsiPackage(msiOptions);
+      cleanSquirrelOutDir();
+      await createSquirrelPackage(defaultSquirrelOptions);
+      await createSquirrelPackage(squirrelOptions130Config);
+      expect(fs.pathExistsSync(msiPath)).ok();
+      expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'RELEASES'))).ok();
+      expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'HelloWix-1.2.3-beta-full.nupkg'))).ok();
+      expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'HelloWix-1.3.0-full.nupkg'))).ok();
+      expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'HelloWix-1.3.0-delta.nupkg'))).ok();
+      expect(fs.pathExistsSync(path.join(OUT_SQRL_DIR, 'Setup.exe'))).ok();
+    });
+
+    const installConfigs = [
+      { userGroup: undefined, effectiveUserGroup: 'Users' },
+      { userGroup: 'Guests', effectiveUserGroup: 'Guests' },
+    ];
+
+    installConfigs.forEach((config) => {
+      it(`installs (userGroup: ${config.effectiveUserGroup})`, async () => {
         await install(msiPath, 3, config.userGroup);
         const version = getWindowsCompliantVersion(msiOptions.version);
         expect(await checkInstall(msiOptions.name, version)).ok();
       });
 
-      it('auto-updates', async () => {
+      it(`auto-updates (userGroup: ${config.effectiveUserGroup})`, async () => {
         const server = serveSquirrel(OUT_SQRL_DIR);
         await autoUpdate(msiPaths123beta.updateExe, server);
         stopServingSquirrel();
       });
 
-      it('has all files in program files', () => {
+      it(`has all files in program files (userGroup: ${config.effectiveUserGroup})`, () => {
         expect(fs.pathExistsSync(msiPaths123beta.stubExe)).ok();
         expect(fs.pathExistsSync(squirrelPaths130.appFolder)).ok();
         expectSameFolderContent(HARNESS_APP_DIR, squirrelPaths130.appFolder);
       });
 
-      it(`has access rights`, async () => {
+      it(`has access rights (userGroup: ${config.effectiveUserGroup})`, async () => {
         const x = await hasAccessRights(squirrelPaths130.appRootFolder, config.effectiveUserGroup);
         expect(x).ok();
       });
 
-      it('has called MsiSquirrel self-update', () => {
+      it(`has called MsiSquirrel self-update (userGroup: ${config.effectiveUserGroup})`, () => {
         const selfUpdateLog = path.join(squirrelPaths130.appFolder, 'SquirrelSetup.log');
         expect(fs.pathExistsSync(selfUpdateLog)).ok();
         const logContent = fs.readFileSync(selfUpdateLog, 'utf-8');
         expect(logContent.includes('--updateSelf')).ok();
       });
 
-      it('has shortcuts', () => {
+      it(`has shortcuts (userGroup: ${config.effectiveUserGroup})`, () => {
         expect(fs.pathExistsSync(msiPaths123beta.startMenuShortcut)).ok();
         expect(fs.pathExistsSync(msiPaths123beta.desktopShortcut)).ok();
       });
@@ -99,14 +120,14 @@ describe.only('MSI auto-updating', () => {
 
       entryPoints.forEach(async (entryPoint) => {
         it(`runs the correct binary via ${entryPoint.name}`, async () => {
-          await launch(msiPaths123beta.startMenuShortcut);
+          await launch(entryPoint.path);
           expect(await runs(msiOptions.exe)).ok();
           expect(await getProcessPath(msiOptions.exe)).to.be(squirrelPaths130.appExe);
           await kill(msiOptions.exe);
         });
       });
 
-      it('uninstalls', async () => {
+      it(`uninstalls (userGroup: ${config.effectiveUserGroup})`, async () => {
         await uninstall(msiPath);
         expect(await checkInstall(msiOptions.name)).not.ok();
         expect(fs.pathExistsSync(msiPaths123beta.appRootFolder)).not.ok();
