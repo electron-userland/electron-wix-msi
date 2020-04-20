@@ -1,0 +1,103 @@
+diff --git a/src/Squirrel/UpdateManager.ApplyReleases.cs b/src/Squirrel/UpdateManager.ApplyReleases.cs
+index 1dbd7c5f4444608b11d3f05df4e44b50ca536cae..aebf5c235493b2518cd5ce47fb4066a9200820ce 100644
+--- a/src/Squirrel/UpdateManager.ApplyReleases.cs
++++ b/src/Squirrel/UpdateManager.ApplyReleases.cs
+@@ -60,16 +60,18 @@ public async Task<string> ApplyReleases(UpdateInfo updateInfo, bool silentInstal
+                     "Failed to invoke post-install");
+                 progress(75);
+ 
+-                this.Log().Info("Starting fixPinnedExecutables");
+-                this.ErrorIfThrows(() => fixPinnedExecutables(updateInfo.FutureReleaseEntry.Version));
++                this.Log().Info("MSI Aware - skip fixPinnedExecutables");
++                //this.Log().Info("Starting fixPinnedExecutables");
++                //this.ErrorIfThrows(() => fixPinnedExecutables(updateInfo.FutureReleaseEntry.Version));
+ 
+-                this.Log().Info("Fixing up tray icons");
++                this.Log().Info("MSI Aware - skip fixing tray icons");
++                //this.Log().Info("Fixing up tray icons");
+ 
+-                var trayFixer = new TrayStateChanger();
+-                var appDir = new DirectoryInfo(Utility.AppDirForRelease(rootAppDirectory, updateInfo.FutureReleaseEntry));
+-                var allExes = appDir.GetFiles("*.exe").Select(x => x.Name).ToList();
++                //var trayFixer = new TrayStateChanger();
++                //var appDir = new DirectoryInfo(Utility.AppDirForRelease(rootAppDirectory, updateInfo.FutureReleaseEntry));
++                //var allExes = appDir.GetFiles("*.exe").Select(x => x.Name).ToList();
+ 
+-                this.ErrorIfThrows(() => trayFixer.RemoveDeadEntries(allExes, rootAppDirectory, updateInfo.FutureReleaseEntry.Version.ToString()));
++                //this.ErrorIfThrows(() => trayFixer.RemoveDeadEntries(allExes, rootAppDirectory, updateInfo.FutureReleaseEntry.Version.ToString()));
+                 progress(80);
+ 
+                 unshimOurselves();
+@@ -193,6 +195,8 @@ public async Task FullUninstall()
+ 
+             public void CreateShortcutsForExecutable(string exeName, ShortcutLocation locations, bool updateOnly, string programArguments, string icon)
+             {
++                this.Log().Info("MSI Aware - skip creating shortcuts");
++                return; // disabled code path for MSI powered installation
+                 this.Log().Info("About to create shortcuts for {0}, rootAppDir {1}", exeName, rootAppDirectory);
+ 
+                 var releases = Utility.LoadLocalReleases(Utility.LocalReleaseFileForAppDir(rootAppDirectory));
+@@ -346,10 +350,11 @@ async Task<ReleaseEntry> createFullPackagesFromDeltas(IEnumerable<ReleaseEntry>
+             void executeSelfUpdate(SemanticVersion currentVersion)
+             {
+                 var targetDir = getDirectoryForRelease(currentVersion);
+-                var newSquirrel = Path.Combine(targetDir.FullName, "Squirrel.exe");
++                var newSquirrel = Path.Combine(targetDir.FullName, "MsiSquirrel.exe");  // ship special MSI powered installation
+                 if (!File.Exists(newSquirrel)) {
+                     return;
+                 }
++                this.Log().Info("MSI Aware self update via MsiSquirrel.exe");
+ 
+                 // If we're running in the context of Update.exe, we can't 
+                 // update ourselves. Instead, ask the new Update.exe to do it
+@@ -393,7 +398,7 @@ async Task invokePostInstall(SemanticVersion currentVersion, bool isInitialInsta
+ 
+                 // If this is the first run, we run the apps with first-run and 
+                 // *don't* wait for them, since they're probably the main EXE
+-                if (squirrelApps.Count == 0) {
++                if (squirrelApps.Count == 0 && false) {  // disabled code path for MSI powered installation
+                     this.Log().Warn("No apps are marked as Squirrel-aware! Going to run them all");
+ 
+                     squirrelApps = targetDir.EnumerateFiles()
+@@ -417,6 +422,7 @@ async Task invokePostInstall(SemanticVersion currentVersion, bool isInitialInsta
+ 
+             void fixPinnedExecutables(SemanticVersion newCurrentVersion, bool removeAll = false)
+             {
++                return; // disabled code path for MSI powered installation
+                 if (Environment.OSVersion.Version < new Version(6, 1)) {
+                     this.Log().Warn("fixPinnedExecutables: Found OS Version '{0}', exiting...", Environment.OSVersion.VersionString);
+                     return;
+diff --git a/src/Squirrel/UpdateManager.InstallHelpers.cs b/src/Squirrel/UpdateManager.InstallHelpers.cs
+index 441b0f5645d0e44e0f431d341cf0ad3aa0acb638..ff4ec67c539a40c2f904eb64ba6a05c66c5fedb8 100644
+--- a/src/Squirrel/UpdateManager.InstallHelpers.cs
++++ b/src/Squirrel/UpdateManager.InstallHelpers.cs
+@@ -31,6 +31,7 @@ public InstallHelperImpl(string applicationName, string rootAppDirectory)
+             const string uninstallRegSubKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall";
+             public async Task<RegistryKey> CreateUninstallerRegistryEntry(string uninstallCmd, string quietSwitch)
+             {
++                return null; // disabled code path for MSI powered installation
+                 var releaseContent = File.ReadAllText(Path.Combine(rootAppDirectory, "packages", "RELEASES"), Encoding.UTF8);
+                 var releases = ReleaseEntry.ParseReleaseFile(releaseContent);
+                 var latest = releases.Where(x => !x.IsDelta).OrderByDescending(x => x.Version).First();
+diff --git a/src/Update/Program.cs b/src/Update/Program.cs
+index 3a026a29136148df75201bcdf55a1a1a44c8e0df..841a1672093f4c046f50e53f85215007bc0d523d 100644
+--- a/src/Update/Program.cs
++++ b/src/Update/Program.cs
+@@ -313,14 +313,15 @@ public async Task<string> Download(string updateUrl, string appName = null)
+         public async Task<string> CheckForUpdate(string updateUrl, string appName = null)
+         {
+             appName = appName ?? getAppNameFromDirectory();
+-
+             this.Log().Info("Fetching update information, downloading from " + updateUrl);
+             using (var mgr = new UpdateManager(updateUrl, appName)) {
+                 var updateInfo = await mgr.CheckForUpdate(progress: x => Console.WriteLine(x));
+                 var releaseNotes = updateInfo.FetchReleaseNotes();
++                if (updateInfo.CurrentlyInstalledVersion == null)
++                  this.Log().Warn("No locally installed release package found.");
+ 
+                 var sanitizedUpdateInfo = new {
+-                    currentVersion = updateInfo.CurrentlyInstalledVersion.Version.ToString(),
++                    currentVersion = updateInfo.CurrentlyInstalledVersion != null ? updateInfo.CurrentlyInstalledVersion.Version.ToString() : "0.0.0",
+                     futureVersion = updateInfo.FutureReleaseEntry.Version.ToString(),
+                     releasesToApply = updateInfo.ReleasesToApply.Select(x => new {
+                         version = x.Version.ToString(),
