@@ -6,17 +6,18 @@ import { overridePlatform, resetPlatform } from '../test-utils';
 
 import * as fs from 'fs-extra';
 
-const mkdtempSyncMock = jest.fn(() => 'C:\\temp\\XXX');
+const mkdtempSyncMock = jest.fn();
 Object.defineProperty(fs, 'mkdtempSync', {
   value: mkdtempSyncMock
 });
 
 const originalTmp = process.env.TEMP;
+const S = process.platform === 'win32' ? '\\' : '/';
 
 const tests = [
-  { TEMP: 'C:\\tmp', TMPDIR: 'C:\\tmp', regex: /C:\\tmp\\hello.*\.exe/ },
-  { TEMP: undefined, TMPDIR: 'C:\\tmp',  regex: /C:\\tmp\\hello.*\.exe/ },
-  { TEMP: undefined, TMPDIR: undefined,  regex: /C:\\Windows\\temp\\hello.*\.exe/ },
+  { case: '1', TEMP: 'C:\\tmp', TMPDIR: 'C:\\tmp', platform: 'win32', regex: /C:\\tmp\\hello.*\.exe/ },
+  { case: '2', TEMP: undefined, TMPDIR: 'C:\\tmp', platform: 'win32', regex: /C:\\tmp\\hello.*\.exe/ },
+  { case: '3', TEMP: undefined, TMPDIR: undefined, platform: 'darwin', regex: `\\${S}tmp\\${S}hello.*\.exe` },
 ];
 
 beforeAll(() => {
@@ -32,16 +33,18 @@ afterAll(() => {
   });
 
 tests.forEach((config) => {
-  it(`gets a temp file path`, () => {
-    overridePlatform('win32');
+  it(`gets a temp file path (case:${config.case})`, () => {
+    overridePlatform(config.platform);
     if (config.TEMP) { process.env.TEMP = config.TEMP; } else { delete process.env.TEMP; }
     if (config.TMPDIR) { process.env.TMPDIR = config.TMPDIR; } else { delete process.env.TMPDIR; }
-
-    mkdtempSyncMock.mockReturnValueOnce(getTempPath() + '\\helloXXXX');
+    const S2 = process.platform === 'win32' ? '\\' : '/';
+    mkdtempSyncMock.mockReturnValueOnce(getTempPath() + `${S2}helloXXXX`);
 
     const { tempFolderPath, tempFilePath } = getTempFilePath('hello', 'exe');
+
     expect(tempFilePath.startsWith(tempFolderPath)).toBeTruthy();
-    expect(config.regex.test(tempFilePath)).toBeTruthy();
+    const rx = new RegExp(config.regex);
+    expect(rx.test(tempFilePath)).toBeTruthy();
     resetPlatform();
   });
 });
