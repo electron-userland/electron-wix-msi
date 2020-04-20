@@ -24,7 +24,6 @@
   },
   "dependencies": {
     "debug": "^4.1.1",
-    "exe-icon-extractor": "^1.0.8",
     "fs-extra": "^8.1.0",
     "klaw": "^3.0.0",
     "lodash": "^4.17.15",
