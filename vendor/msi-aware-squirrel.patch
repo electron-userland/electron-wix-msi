@@ -80,24 +80,95 @@ index 441b0f5645d0e44e0f431d341cf0ad3aa0acb638..ff4ec67c539a40c2f904eb64ba6a05c6
                  var releases = ReleaseEntry.ParseReleaseFile(releaseContent);
                  var latest = releases.Where(x => !x.IsDelta).OrderByDescending(x => x.Version).First();
 diff --git a/src/Update/Program.cs b/src/Update/Program.cs
-index 3a026a29136148df75201bcdf55a1a1a44c8e0df..841a1672093f4c046f50e53f85215007bc0d523d 100644
+index 3a026a29136148df75201bcdf55a1a1a44c8e0df..5eb6159747bd556c1e193fbfa6f7b2c4a5290b98 100644
 --- a/src/Update/Program.cs
 +++ b/src/Update/Program.cs
-@@ -313,14 +313,15 @@ public async Task<string> Download(string updateUrl, string appName = null)
-         public async Task<string> CheckForUpdate(string updateUrl, string appName = null)
-         {
-             appName = appName ?? getAppNameFromDirectory();
--
-             this.Log().Info("Fetching update information, downloading from " + updateUrl);
+@@ -318,13 +318,16 @@ public async Task<string> CheckForUpdate(string updateUrl, string appName = null
              using (var mgr = new UpdateManager(updateUrl, appName)) {
                  var updateInfo = await mgr.CheckForUpdate(progress: x => Console.WriteLine(x));
                  var releaseNotes = updateInfo.FetchReleaseNotes();
-+                if (updateInfo.CurrentlyInstalledVersion == null)
-+                  this.Log().Warn("No locally installed release package found.");
++                var currentVersion = ensureCurrentVersion(updateInfo.CurrentlyInstalledVersion);
  
                  var sanitizedUpdateInfo = new {
 -                    currentVersion = updateInfo.CurrentlyInstalledVersion.Version.ToString(),
-+                    currentVersion = updateInfo.CurrentlyInstalledVersion != null ? updateInfo.CurrentlyInstalledVersion.Version.ToString() : "0.0.0",
++                    currentVersion = currentVersion.ToString(),
                      futureVersion = updateInfo.FutureReleaseEntry.Version.ToString(),
-                     releasesToApply = updateInfo.ReleasesToApply.Select(x => new {
-                         version = x.Version.ToString(),
+-                    releasesToApply = updateInfo.ReleasesToApply.Select(x => new {
+-                        version = x.Version.ToString(),
+-                        releaseNotes = releaseNotes.ContainsKey(x) ? releaseNotes[x] : "",
++                    releasesToApply = updateInfo.ReleasesToApply
++                        .Where(x=>x.Version > currentVersion)
++                        .Select(x => new {
++                            version = x.Version.ToString(),
++                            releaseNotes = releaseNotes.ContainsKey(x) ? releaseNotes[x] : "",
+                     }).ToArray(),
+                 };
+ 
+@@ -562,6 +565,67 @@ public void ShowHelp()
+             opts.WriteOptionDescriptions(Console.Out);
+         }
+ 
++        SemanticVersion ensureCurrentVersion(ReleaseEntry currentlyInstalledVersion) {
++            var currentVersionString = currentlyInstalledVersion?.Version != null ? currentlyInstalledVersion.Version.ToString() : "0.0.0";
++            if (currentVersionString == "0.0.0")
++            {
++                this.Log().Info("MSI Aware - No locally installed release package found. This is likely the first update of an MSI install. Looking for latest version via App folder name.");
++                try
++                {
++                    var appFolderPrefix = "app-";
++                    var subDirs = Directory.EnumerateDirectories(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)).Select(x => new DirectoryInfo(x));
++                    var appDirNames = subDirs
++                        .Where(x => x.Name.StartsWith(appFolderPrefix))
++                        .Where(x => x.GetFiles(".dead").Count() == 0)
++                        .Select(x => x.Name);
++                    var currentVersion = SemanticVersion.Parse(currentVersionString);
++
++                    if (appDirNames.Count() == 0)
++                    {
++                        this.Log().Error("MSI Aware - No App folders found or all marked as .dead. Unable to retrieve version.");
++                    }
++                    foreach (var appDirName in appDirNames)
++                    {
++                        SemanticVersion version;
++                        if (SemanticVersion.TryParse(appDirName.Substring(appFolderPrefix.Length, appDirName.Length - appFolderPrefix.Length), out version))
++                        {
++                            currentVersion = version > currentVersion ? version : currentVersion;
++                        }
++                    }
++                    currentVersionString = currentVersion.ToString();
++                }
++                catch (Exception ex)
++                {
++                    this.Log().ErrorException("MSI Aware - Failed to retrieve latest version via App folder name.", ex);
++                }
++            }
++
++            // If we still have no version then lets look into the installInfo file. This should not happen btw.
++            if (currentVersionString == "0.0.0")
++            {
++                this.Log().Warn("MSI Aware - No local release package found and version retrieval via App folder naming failed. Looking for version in MSI installInfo file.");
++                var installInfoFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), ".installInfo.json");
++                if (File.Exists(installInfoFile))
++                {
++                    try
++                    {
++                        dynamic x = SimpleJson.DeserializeObject(File.ReadAllText(installInfoFile));
++                        currentVersionString = x.baseVersion;
++                    }
++                    catch (Exception ex)
++                    {
++                        this.Log().ErrorException("MSI Aware - Failed to read version from installInfo file. Gonna report version 0.0.0", ex);
++                    }
++                }
++                else
++                {
++                    this.Log().Warn("MSI Aware - installInfo file not found. Gonna report version 0.0.0");
++                }
++            }
++
++            return SemanticVersion.Parse(currentVersionString);
++        }
++
+         void waitForParentToExit()
+         {
+             // Grab a handle the parent process
