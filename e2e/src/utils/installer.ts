@@ -4,6 +4,7 @@ import path from 'path';
 import { spawnPromise } from 'spawn-rx';
 
 import { MSICreatorOptions } from '../../../lib/index';
+import { SquirrelOptions } from './squirrel-packager';
 
 function isMSICreatorOptions(toBeDetermined: MSICreatorOptions | Options): toBeDetermined is MSICreatorOptions {
   if ((toBeDetermined as MSICreatorOptions).ui) {
@@ -60,23 +61,6 @@ export const uninstallViaPowershell = async (name: string) => {
   }
 };
 
-export const testXX = async (name: string) => {
-  const ps = new Shell({
-    executionPolicy: 'Bypass',
-    noProfile: true
-  });
-  let result = '';
-  try {
-    ps.addCommand(`Get-ItemPropertyValue 'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run' -Name com.squirrel.HelloWix.HelloWix`);
-    result = await ps.invoke();
-  } finally {
-    ps.dispose();
-  }
-
-  return result;
-};
-
-
 export const checkInstall = async (name: string, version?: string) => {
   const ps = new Shell({
     executionPolicy: 'Bypass',
@@ -101,9 +85,8 @@ export const checkInstall = async (name: string, version?: string) => {
   return installPackage === `${name}${!!version ? version : ''}`;
 };
 
-export const getInstallPaths = (options: MSICreatorOptions | Options): InstallPaths => {
-  const arch =  isMSICreatorOptions(options) &&
-    (options.arch === 'x64' || options.arch === 'ia64') ? options.arch : 'x86';
+export const getInstallPaths = (options: MSICreatorOptions | SquirrelOptions): InstallPaths => {
+  const arch = options.arch;
   const programFiles = arch === 'x86' ? process.env['ProgramFiles(x86)']! : process.env.ProgramFiles!;
   const appRootFolder = path.join(programFiles, options.name!);
   const shortName = isMSICreatorOptions(options) ? options.shortName || options.name : options.name;
