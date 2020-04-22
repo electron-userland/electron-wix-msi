@@ -422,7 +422,7 @@ test('MSICreator create() shortcut name override', async () => {
 testIncludes('Custom shortcut name', '<Shortcut Id="ApplicationStartMenuShortcut" Name="BeepBeep"');
 
 testIncludes('Install path property', '<Property Id="INSTALLPATH">');
-testIncludes('Install RegistrySearch', '<RegistrySearch Key="SOFTWARE\\Acme Technologies\\Acme" Root="HKLM" Type="raw" Id="INSTALLPATH_REGSEARCH" Name="InstallPath" />');
+testIncludes('Install RegistrySearch', '<RegistrySearch Key="SOFTWARE\\Acme Technologies\\Acme"');
 testIncludes('RegistryInstallPath component',  '<Component Id="RegistryInstallPath"');
 testIncludes('RegistryInstallPath component-ref',  '<ComponentRef Id="RegistryInstallPath" />');
 testIncludes('PurgeOnUninstall component',  '<Component Id="PurgeOnUninstall" ');
