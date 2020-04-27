@@ -78,7 +78,7 @@ const mockFolderFileTree = defaultsDeep(cloneDeep(mockFolderTree), {
     id: 'RegistryInstallPath',
     key: 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationName}}',
     name: 'InstallPath',
-    root: 'HKLM',
+    root: 'HKMU',
     type: 'string',
     value: '[APPLICATIONROOTDIRECTORY]',
   }],
