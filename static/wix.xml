@@ -13,13 +13,17 @@
     <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/package.html -->
     <Package InstallerVersion="405"
              Compressed="yes"
-             InstallScope="perMachine"
              Comments="Windows Installer Package"
              Platform="{{Platform}}"/>
-
-    <!-- Overides the defautl install mode. It solves a problem where
-    individual packaged files that have the same version as in pervious
-    installed App version will be deleted if the files a re in use during
+    <!-- Signals Single Package Authoring. This pacakge can pe installed perMachine
+    or perUser. The mode is determined by the property below. -->
+    <Property Id="ALLUSERS" Secure="yes" Value="2" />
+    <!-- Tells the package to install perUser or perMachine. In case of perUser, all
+    files will be redirected to the user profile and all registry entries to HKCU. -->
+    <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="{{InstallPerUser}}" />
+    <!-- Overides the default install mode. It solves a problem where
+    individual packaged files that have the same version as in previous
+    installed App version will be deleted if the files are in use during
     this upgrade. Unfortunately this causes an ICE 40 warning during linking. -->
     <Property Id="REINSTALLMODE" Value="emus" />
     <!-- Overrides the default reboot behavior if files are in use during the upgrade.
@@ -33,11 +37,20 @@
     the install folder in cas the auto-updater is installed. User that run the App
     must be part of that user group to be able to auto-update. -->
     <Property Id="UPDATERUSERGROUP" Value="Users" />
+    <!-- Necessary registry search to find the install path which is used by the
+    PurgeOnUninstall action. Since this package can be installed perUser or perMachine,
+    we have to look in both places. First successful search wins. -->
     <Property Id="INSTALLPATH">
+      <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}"
+                      Root="HKCU" 
+                      Type="raw"
+                      Id="INSTALLPATH_REGSEARCH_HKCU"
+                      Name="InstallPath"
+                      Win64="{{Win64YesNo}}"/>
       <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}"
                       Root="HKLM" 
                       Type="raw"
-                      Id="INSTALLPATH_REGSEARCH"
+                      Id="INSTALLPATH_REGSEARCH_HKLM"
                       Name="InstallPath"
                       Win64="{{Win64YesNo}}"/>
     </Property>

@@ -143,7 +143,7 @@ describe('Electron WIX MSI', () => {
 
       entryPoints.forEach((entryPoint) => {
         it(`runs the correct binary via ${entryPoint.name}`, async () => {
-          await launch(paths124.startMenuShortcut);
+          await launch(entryPoint.name);
           expect(await runs(options.exe)).ok();
           expect(await getProcessPath(options.exe)).to.be(paths124.appExe);
           await kill(options.exe);
@@ -152,6 +152,10 @@ describe('Electron WIX MSI', () => {
     });
 
     describe(`Uninstalling ${getTestConfigString()}`, () =>  {
+      after(() => {
+        // even if we failed, we still wanna leave behind a clean state for the next test
+        fs.rmdirSync(paths124.appRootFolder, { recursive: true });
+      });
       it('uninstalls', async () => {
         await uninstall(msiPath);
         expect(await checkInstall(options.name)).not.ok();

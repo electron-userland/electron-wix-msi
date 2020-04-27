@@ -55,6 +55,7 @@ export interface MSICreatorOptions {
   certificatePassword?: string;
   arch?: 'x64' | 'ia64'| 'x86';
   features?: Features | false;
+  defaultInstallMode?: 'perUser' | 'perMachine';
 }
 
 export interface UIOptions {
@@ -118,6 +119,7 @@ export class MSICreator {
   public arch: 'x64' | 'ia64'| 'x86' = 'x86';
   public autoUpdate: boolean;
   public autoLaunch: boolean;
+  public defaultInstallMode: 'perUser' | 'perMachine';
 
   public ui: UIOptions | boolean;
 
@@ -148,6 +150,7 @@ export class MSICreator {
     this.semanticVersion = options.version;
     this.windowsCompliantVersion = getWindowsCompliantVersion(options.version);
     this.arch = options.arch || 'x86';
+    this.defaultInstallMode = options.defaultInstallMode || 'perMachine';
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`;
@@ -260,6 +263,7 @@ export class MSICreator {
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
       '{{DesktopShortcutGuid}}': uuid(),
       '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
+      '{{InstallPerUser}}': this.defaultInstallMode === 'perUser' ? '1' : '0',
       '\r\n.*{{remove newline}}': ''
     };
 

@@ -421,6 +421,8 @@ test('MSICreator create() shortcut name override', async () => {
 });
 testIncludes('Custom shortcut name', '<Shortcut Id="ApplicationStartMenuShortcut" Name="BeepBeep"');
 
+testIncludes('Single Package Authoring setting', '<Property Id="ALLUSERS" Secure="yes" Value="2" />');
+testIncludes('correct default perUser setting', '<Property Id="MSIINSTALLPERUSER" Secure="yes" Value="0" />');
 testIncludes('Install path property', '<Property Id="INSTALLPATH">');
 testIncludes('Install RegistrySearch', '<RegistrySearch Key="SOFTWARE\\Acme Technologies\\Acme"');
 testIncludes('RegistryInstallPath component',  '<Component Id="RegistryInstallPath"');
@@ -483,4 +485,16 @@ describe('auto-launch', () => {
   testIncludes('RegistryRunKey component', '<Component Id="RegistryRunKey"');
   testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
   regexTestIncludes('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
+});
+
+describe('perUser install by default', () => {
+  test('MSICreator includes Auto-Updater feature', async () => {
+    const msiCreator = new MSICreator({ ...defaultOptions, defaultInstallMode: 'perUser' });
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    console.log(wxsContent);
+    expect(wxsFile).toBeTruthy();
+  });
+
+  testIncludes('correct defautlt perUser setting', '<Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1" />');
 });

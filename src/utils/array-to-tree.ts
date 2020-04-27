@@ -175,7 +175,7 @@ export function addFilesToTree( tree: FileFolderTree,
   // We then can utilize that registry value to purge our install folder on uninstall.
   output.__ELECTRON_WIX_MSI_REGISTRY__.push({
     id: 'RegistryInstallPath',
-    root: 'HKLM',
+    root: 'HKMU',
     name: 'InstallPath',
     key: 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationName}}',
     type: 'string',
@@ -194,7 +194,7 @@ export function addFilesToTree( tree: FileFolderTree,
   if (autoLaunch) {
     output.__ELECTRON_WIX_MSI_REGISTRY__.push({
       id: 'RegistryRunKey',
-      root: 'HKLM',
+      root: 'HKMU',
       name: '{{AppUserModelId}}',
       key: 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',
       type: 'string',
