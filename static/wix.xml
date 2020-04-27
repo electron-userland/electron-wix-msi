@@ -18,12 +18,12 @@
     <!-- Signals Single Package Authoring. This pacakge can pe installed perMachine
     or perUser. The mode is determined by the property below. -->
     <Property Id="ALLUSERS" Secure="yes" Value="2" />
-    <!-- Tells the packagae to instlall perUser or perMachine. In case of perUser, all
-    files will be redirected to the user profile and all registty entries ot the HKCU. -->
+    <!-- Tells the package to install perUser or perMachine. In case of perUser, all
+    files will be redirected to the user profile and all registry entries to HKCU. -->
     <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="{{InstallPerUser}}" />
-    <!-- Overides the defautl install mode. It solves a problem where
-    individual packaged files that have the same version as in pervious
-    installed App version will be deleted if the files a re in use during
+    <!-- Overides the default install mode. It solves a problem where
+    individual packaged files that have the same version as in previous
+    installed App version will be deleted if the files are in use during
     this upgrade. Unfortunately this causes an ICE 40 warning during linking. -->
     <Property Id="REINSTALLMODE" Value="emus" />
     <!-- Overrides the default reboot behavior if files are in use during the upgrade.
