@@ -1,9 +1,9 @@
-import { extractIcon } from 'exe-icon-extractor';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as rcedit from 'rcedit';
 import * as rcinfo from 'rcinfo';
 import { getTempFilePath } from './fs-helper';
+
 
 interface RcInfo {
   'version-string': {
@@ -17,6 +17,16 @@ interface RcInfo {
   'icon?': string;
 }
 
+function getExtractIcon(): (_: string, __: string) => Buffer {
+  if (process.platform === 'win32') {
+    return require('exe-icon-extractor').extractIcon;
+  } else {
+    return (_: string, __: string): Buffer => {
+      throw Error('Not implemented');
+    };
+  }
+}
+
 function getFileInfo(exePath: string): Promise<any> {
   const promise = new Promise<any>((resolve, reject) => {
     rcinfo(exePath, (error: Error, info: any) => error ? reject(error) : resolve(info));
@@ -27,7 +37,7 @@ function getFileInfo(exePath: string): Promise<any> {
 
 async function extractIconFromApp(exePath: string, tempFolder: string): Promise<string> {
   try {
-    const buffer = extractIcon(exePath, 'large');
+    const buffer = getExtractIcon()(exePath, 'large');
     const iconPath = path.join(tempFolder, 'app.ico');
     await fs.writeFile(iconPath, buffer);
     return iconPath;
