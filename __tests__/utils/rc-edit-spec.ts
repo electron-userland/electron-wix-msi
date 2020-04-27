@@ -46,6 +46,7 @@ afterEach(() => {
 });
 
 test('transfers exe file info to stub exe', async () => {
+  overridePlatform('win32');
   rcinfoMock.mockImplementation((_, callback) => {
     callback(null, {
       CompanyName: 'acme corp',
@@ -65,6 +66,7 @@ test('transfers exe file info to stub exe', async () => {
 });
 
 test('uses parameter if rcinfo fails', async () => {
+  overridePlatform('win32');
   rcinfoMock.mockImplementation((_, callback) => {
     callback(new Error('fail'), undefined);
   });
@@ -86,6 +88,7 @@ test('uses parameter if rcinfo fails', async () => {
 });
 
 test('uses an explicitly provided app icon for the stub exe', async () => {
+  overridePlatform('win32');
   rcinfoMock.mockImplementation((_, callback) => {
     callback(null, {
       CompanyName: 'acme corp',
@@ -107,6 +110,7 @@ test('uses an explicitly provided app icon for the stub exe', async () => {
 });
 
 test('it users no icon if extraction fails and no explicit one is provided', async () => {
+  overridePlatform('win32');
   rcinfoMock.mockImplementation((_, callback) => {
     callback(null, {
       CompanyName: 'acme corp',
@@ -132,7 +136,6 @@ test('it users no icon if extraction fails and no explicit one is provided', asy
 });
 
 test('it users no icon if icon extractor module is not available', async () => {
-  const createStubExe2 = require('../../src/utils/rc-edit').createStubExe;
   overridePlatform('darwin');
   rcinfoMock.mockImplementation((_, callback) => {
     callback(null, {
@@ -150,6 +153,6 @@ test('it users no icon if icon extractor module is not available', async () => {
     icon: ''
   };
 
-  await createStubExe2(process.env.TEMP!, 'acme', 'bat-app', 'Wayne Enterprise', 'I am Batman', '3.3.3');
+  await createStubExe(process.env.TEMP!, 'acme', 'bat-app', 'Wayne Enterprise', 'I am Batman', '3.3.3');
   expect(rceditMock).toBeCalledWith(expect.stringMatching(acmeExeRegex), expectedFileInfo);
 });
