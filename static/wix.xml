@@ -16,7 +16,7 @@
              Comments="Windows Installer Package"
              Platform="{{Platform}}"/>
     <!-- Signals Single Package Authoring. This pacakge can pe installed perMachine
-    or perUser. The mode is determined by th eproperty below. -->
+    or perUser. The mode is determined by the property below. -->
     <Property Id="ALLUSERS" Secure="yes" Value="2" />
     <!-- Tells the packagae to instlall perUser or perMachine. In case of perUser, all
     files will be redirected to the user profile and all registty entries ot the HKCU. -->
