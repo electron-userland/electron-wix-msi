@@ -1,4 +1,4 @@
       <Feature Id="AutoUpdater" Title="Auto Updater" Level="3" Description="Installs an auto-updater component and sets necesssary file system permissions.">
-        <!-- {{UpdaterComponentRefs}} -->
+<!-- {{UpdaterComponentRefs}} -->
         <ComponentRef Id="SetFolderPermissions" />
       </Feature>
