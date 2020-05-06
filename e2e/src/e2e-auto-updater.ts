@@ -8,6 +8,7 @@ import { getProcessPath, kill, launch, runs } from './utils/app-process';
 import { autoUpdate, checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershell } from './utils/installer';
 import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
 import { hasAccessRights } from './utils/ntfs';
+import { getRegistryKeyValue } from './utils/registry';
 import { cleanSquirrelOutDir, createSquirrelPackage, defaultSquirrelOptions, OUT_SQRL_DIR } from './utils/squirrel-packager';
 import { serveSquirrel, stopServingSquirrel } from './utils/squirrel-server';
 
@@ -31,9 +32,12 @@ const squirrelOptions130 = {
 
 describe('MSI auto-updating', () => {
   before(async () => {
-    if (await checkInstall(defaultMsiOptions.name)) {
-      await uninstallViaPowershell(defaultMsiOptions.name);
+    if (await checkInstall(`${defaultMsiOptions.name} (Machine - MSI)`)) {
+      await uninstallViaPowershell(`${defaultMsiOptions.name} (Machine - MSI)`);
     }
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}).appRootFolder, { recursive: true });
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}, 'perUser').appRootFolder, { recursive: true });
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x64'}).appRootFolder, { recursive: true });
   });
 
   const testConfigs: TestConfig[] = [
@@ -76,6 +80,10 @@ describe('MSI auto-updating', () => {
 
       installConfigs.forEach((config) => {
         describe((`userGroup:${config.effectiveUserGroup}`), () => {
+          before(() => {
+            // even if we failed, we still wanna leave behind a clean state for the next test
+
+          });
           after(() => {
             // even if we failed, we still wanna leave behind a clean state for the next test
             fs.rmdirSync(msiPaths123beta.appRootFolder, { recursive: true });
@@ -84,13 +92,15 @@ describe('MSI auto-updating', () => {
           it(`installs (userGroup: ${config.effectiveUserGroup})`, async () => {
             await install(msiPath, 3, config.userGroup);
             const version = getWindowsCompliantVersion(msiOptions.version);
-            expect(await checkInstall(msiOptions.name, version)).ok();
+            expect(await checkInstall(`${msiOptions.name} (Machine)`, msiOptions.version)).ok();
+            expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`, version)).ok();
           });
 
           it(`auto-updates (userGroup: ${config.effectiveUserGroup})`, async () => {
             const server = serveSquirrel(OUT_SQRL_DIR);
             await autoUpdate(msiPaths123beta.updateExe, server);
             stopServingSquirrel();
+            expect(await checkInstall(`${msiOptions.name} (Machine)`, squirrelOptions130Config.version)).ok();
           });
 
           it(`has all files in program files (userGroup: ${config.effectiveUserGroup})`, () => {
@@ -104,8 +114,23 @@ describe('MSI auto-updating', () => {
             expect(x).ok();
           });
 
-          it(`has called MsiSquirrel self-update (userGroup: ${config.effectiveUserGroup})`, () => {
-            const selfUpdateLog = path.join(squirrelPaths130.appFolder, 'SquirrelSetup.log');
+          const regValues = [
+            {name: 'DisplayName', value: `${msiOptions.name} (Machine)`},
+            {name: 'DisplayVersion', value: squirrelOptions130Config.version},
+            {name: 'InstallPath', value: `${msiPaths123beta.appRootFolder}\\`},
+            {name: 'Publisher', value: msiOptions.manufacturer},
+          ];
+          regValues.forEach(async (value) => {
+            it(`has uninstall registry key has value: ${value.name} (${testConfig.arch})`, async () => {
+              const installInfo = fs.readJSONSync(path.join(msiPaths123beta.appRootFolder, '.installInfo.json'));
+              const regKey = `${msiPaths123beta.registryUninstallKey}\\{${installInfo.productCode}}.msiSquirrel`;
+              const regValue = await getRegistryKeyValue(regKey, value.name);
+              expect(regValue).to.be(value.value);
+            });
+          });
+
+          it(`has called msq self-update (userGroup: ${config.effectiveUserGroup})`, () => {
+            const selfUpdateLog = path.join(squirrelPaths130.appFolder, 'Squirrel-UpdateSelf.log');
             expect(fs.pathExistsSync(selfUpdateLog)).ok();
             const logContent = fs.readFileSync(selfUpdateLog, 'utf-8');
             expect(logContent.includes('--updateSelf')).ok();

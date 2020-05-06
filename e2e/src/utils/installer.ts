@@ -23,6 +23,7 @@ export interface InstallPaths {
   desktopShortcut: string;
   appUserModelId: string;
   registryRunKey: string;
+  registryUninstallKey: string;
 }
 
 export const install = async (msi: string, installLevel: 1 | 2 | 3 = 2, autoUpdaterUserGroup?: string, installMode?: 'perUser' | 'perMachine') => {
@@ -59,7 +60,7 @@ export const uninstallViaPowershell = async (name: string) => {
   });
 
   try {
-    ps.addCommand(`$p = Get-Package -Name ${name} | Uninstall-Package`);
+    ps.addCommand(`$p = Get-Package -Name "${name}" | Uninstall-Package`);
     await ps.invoke();
   } finally {
     ps.dispose();
@@ -74,11 +75,10 @@ export const checkInstall = async (name: string, version?: string) => {
 
   let installPackage: string;
   try {
+    ps.addCommand(`$p = Get-Package -Name "${name}" -ErrorAction SilentlyContinue`);
     if (version) {
-      ps.addCommand(`$p = Get-Package -Name ${name} -RequiredVersion ${version} -ErrorAction SilentlyContinue`);
       ps.addCommand('$p.Name + $p.Version');
     } else {
-      ps.addCommand(`$p = Get-Package -Name ${name} -ErrorAction SilentlyContinue`);
       ps.addCommand('$p.Name');
     }
     installPackage = await ps.invoke();
@@ -102,6 +102,8 @@ export const getInstallPaths = (options: MSICreatorOptions | SquirrelOptions,
   const registryRoot = installMode === 'perMachine' ? 'HKLM' : 'HKCU';
   const registryWow = arch === 'x86' && installMode === 'perMachine' ? 'WOW6432Node\\' : '';
   const registryRunKey = `${registryRoot}:\\SOFTWARE\\${registryWow}Microsoft\\Windows\\CurrentVersion\\Run`;
+  const registryUninstallKey =
+    `${registryRoot}:\\SOFTWARE\\${registryWow}Microsoft\\Windows\\CurrentVersion\\Uninstall`;
 
   const startMenuRoot = path.join(installMode === 'perMachine' ? process.env.ProgramData! : process.env['APPDATA']!, 'Microsoft/Windows/Start Menu/Programs/');
   const home = installMode === 'perMachine' ? process.env.Public! : process.env['home']!;
@@ -114,6 +116,7 @@ export const getInstallPaths = (options: MSICreatorOptions | SquirrelOptions,
     startMenuShortcut: isMSICreatorOptions(options) ?  path.join(startMenuRoot, `${options.shortcutFolderName || options.manufacturer}/${options.shortcutName || options.name}.lnk`) : '',
     desktopShortcut: isMSICreatorOptions(options) ? path.join(home, `Desktop/${options.shortcutName || options.name}.lnk`) : '',
     appUserModelId,
-    registryRunKey
+    registryRunKey,
+    registryUninstallKey
   };
 };

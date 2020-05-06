@@ -26,9 +26,12 @@ let autoLaunchRegistryKeyValue = '';
 
 describe('MSI auto-launch', () => {
   before(async () => {
-    if (await checkInstall(defaultMsiOptions.name)) {
-      await uninstallViaPowershell(defaultMsiOptions.name);
+    if (await checkInstall(`${defaultMsiOptions.name} (Machine - MSI)`)) {
+      await uninstallViaPowershell(`${defaultMsiOptions.name} (Machine - MSI)`);
     }
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}).appRootFolder, { recursive: true });
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}, 'perUser').appRootFolder, { recursive: true });
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x64'}).appRootFolder, { recursive: true });
   });
 
   const testConfigs: TestConfig[] = [
@@ -49,6 +52,13 @@ describe('MSI auto-launch', () => {
       };
       const msiPaths123beta = getInstallPaths(msiOptions);
 
+      const entryPoints = [
+        { name: 'stubExe', path: msiPaths123beta.stubExe },
+        { name: 'start menu shortcut', path: msiPaths123beta.startMenuShortcut },
+        { name: 'desktop shortcut', path: msiPaths123beta.desktopShortcut },
+        { name: 'auto-launch key', path: autoLaunchRegistryKeyValue },
+      ];
+
       it(`packages (${testConfig.arch})`, async () => {
         await createMsiPackage(msiOptions);
       });
@@ -56,7 +66,8 @@ describe('MSI auto-launch', () => {
       it(`installs (${testConfig.arch})`, async () => {
         await install(msiPath, 2);
         const version = getWindowsCompliantVersion(msiOptions.version);
-        expect(await checkInstall(msiOptions.name, version)).ok();
+        expect(await checkInstall(`${msiOptions.name} (Machine)`, msiOptions.version)).ok();
+        expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`, version)).ok();
       });
 
       it(`has all files in program files (${testConfig.arch})`, () => {
@@ -73,15 +84,9 @@ describe('MSI auto-launch', () => {
       it(`has auto-launch registry key (${testConfig.arch})`, async () => {
         autoLaunchRegistryKeyValue = await getRegistryKeyValue(msiPaths123beta.registryRunKey,
           msiPaths123beta.appUserModelId);
+        entryPoints[3].path = autoLaunchRegistryKeyValue;
         expect(autoLaunchRegistryKeyValue).to.be(msiPaths123beta.stubExe);
       });
-
-      const entryPoints = [
-        { name: 'stubExe', path: msiPaths123beta.stubExe },
-        { name: 'start menu shortcut', path: msiPaths123beta.startMenuShortcut },
-        { name: 'desktop shortcut', path: msiPaths123beta.desktopShortcut },
-        { name: 'auto-launch key', path: autoLaunchRegistryKeyValue },
-      ];
 
       entryPoints.forEach(async (entryPoint) => {
         it(`runs the correct binary via ${entryPoint.name}`, async () => {

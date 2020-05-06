@@ -21,7 +21,7 @@
     <file src="*.exe.sig" target="lib\net45" />
     <file src="icudtl.dat" target="lib\net45\icudtl.dat" />
     <file src="Squirrel.exe" target="lib\net45\squirrel.exe" />
-    <file src="MsiSquirrel.exe" target="lib\net45\MsiSquirrel.exe" />
+    <file src="msq.exe" target="lib\net45\msq.exe" />
     <file src="LICENSE" target="lib\net45\LICENSE" />
     <file src="<%- exe %>" target="lib\net45\<%- exe %>" />
   </files>

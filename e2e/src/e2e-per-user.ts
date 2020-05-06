@@ -28,11 +28,14 @@ const autoLaunchMsiOptions = {
   }
 };
 
-describe.only('MSI perUser install', () => {
+describe('MSI perUser install', () => {
   before(async () => {
-    if (await checkInstall(defaultMsiOptions.name)) {
-      await uninstallViaPowershell(defaultMsiOptions.name);
+    if (await checkInstall(`${defaultMsiOptions.name} (Machine - MSI)`)) {
+      await uninstallViaPowershell(`${defaultMsiOptions.name} (Machine - MSI)`);
     }
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}).appRootFolder, { recursive: true });
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}, 'perUser').appRootFolder, { recursive: true });
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x64'}).appRootFolder, { recursive: true });
   });
 
   const testConfigs: TestConfig[] = [
@@ -72,7 +75,9 @@ describe.only('MSI perUser install', () => {
           it(`installs (${testConfig.arch})`, async () => {
             await install(msiPath, 2, undefined, installConfig.installMode);
             const version = getWindowsCompliantVersion(msiOptions.version);
-            expect(await checkInstall(msiOptions.name, version)).ok();
+            const nameSuffix = installConfig.effectiveMode  === 'perUser' ? 'User' : 'Machine';
+            expect(await checkInstall(`${msiOptions.name} (${nameSuffix})`, msiOptions.version)).ok();
+            expect(await checkInstall(`${msiOptions.name} (${nameSuffix} - MSI)`, version)).ok();
           });
 
           it(`has all files in program files (${testConfig.arch})`, () => {

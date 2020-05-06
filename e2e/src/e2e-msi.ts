@@ -20,9 +20,12 @@ interface TestConfig {
 
 describe('Electron WIX MSI', () => {
   before(async () => {
-    if (await checkInstall(defaultMsiOptions.name)) {
-      await uninstallViaPowershell(defaultMsiOptions.name);
+    if (await checkInstall(`${defaultMsiOptions.name} (Machine - MSI)`)) {
+      await uninstallViaPowershell(`${defaultMsiOptions.name} (Machine - MSI)`);
     }
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}).appRootFolder, { recursive: true });
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}, 'perUser').appRootFolder, { recursive: true });
+    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x64'}).appRootFolder, { recursive: true });
   });
 
   const tests: TestConfig[] = [
@@ -32,12 +35,12 @@ describe('Electron WIX MSI', () => {
   ];
 
   tests.forEach((test) => {
-    const options = {
+    const msiOptions = {
       ...defaultMsiOptions,
       ...test
     };
 
-    const paths = getInstallPaths(options);
+    const paths = getInstallPaths(msiOptions);
 
     const getTestConfigString = () => {
       let configString = test.arch || 'arch:undefined';
@@ -54,23 +57,24 @@ describe('Electron WIX MSI', () => {
 
     describe(`Packaging ${getTestConfigString()}`, () =>  {
         it('creates a package', async () => {
-          await createMsiPackage(options);
+          await createMsiPackage(msiOptions);
           expect(fs.pathExistsSync(msiPath)).to.be(true);
         });
     });
 
     describe(`Installing ${getTestConfigString()}`, () =>  {
       before(async () => {
-        await kill(options.exe);
+        await kill(msiOptions.exe);
       });
       after(async () => {
-        await kill(options.exe);
+        await kill(msiOptions.exe);
       });
 
       it('installs', async () => {
         await install(msiPath);
-        const version = getWindowsCompliantVersion(options.version);
-        expect(await checkInstall(options.name, version)).ok();
+        const version = getWindowsCompliantVersion(msiOptions.version);
+        expect(await checkInstall(`${msiOptions.name} (Machine)`, msiOptions.version)).ok();
+        expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`, version)).ok();
       });
 
       it('has all files in program files', () => {
@@ -97,32 +101,33 @@ describe('Electron WIX MSI', () => {
       entryPoints.forEach((entryPoint) => {
         it(`runs the correct binary via ${entryPoint.name}`, async () => {
           await launch(paths.startMenuShortcut);
-          expect(await runs(options.exe)).ok();
-          expect(await getProcessPath(options.exe)).to.be(paths.appExe);
-          await kill(options.exe);
+          expect(await runs(msiOptions.exe)).ok();
+          expect(await getProcessPath(msiOptions.exe)).to.be(paths.appExe);
+          await kill(msiOptions.exe);
          });
       });
     });
 
     const options124 = {
-      ...options,
+      ...msiOptions,
       version: '1.2.4'
     };
     const paths124 = getInstallPaths(options124);
 
     describe(`Updating ${getTestConfigString()}`, () =>  {
       before(async () => {
-        await kill(options.exe);
+        await kill(msiOptions.exe);
       });
       after(async () => {
-        await kill(options.exe);
+        await kill(msiOptions.exe);
       });
 
       it('updates', async () => {
         await createMsiPackage(options124);
         await install(msiPath);
         const version = getWindowsCompliantVersion(options124.version);
-        expect(await checkInstall(options124.name, version)).ok();
+        expect(await checkInstall(`${options124.name} (Machine)`, options124.version)).ok();
+        expect(await checkInstall(`${options124.name} (Machine - MSI)`, version)).ok();
       });
 
       it('has all files in program files', () => {
@@ -143,10 +148,10 @@ describe('Electron WIX MSI', () => {
 
       entryPoints.forEach((entryPoint) => {
         it(`runs the correct binary via ${entryPoint.name}`, async () => {
-          await launch(entryPoint.name);
-          expect(await runs(options.exe)).ok();
-          expect(await getProcessPath(options.exe)).to.be(paths124.appExe);
-          await kill(options.exe);
+          await launch(entryPoint.path);
+          expect(await runs(msiOptions.exe)).ok();
+          expect(await getProcessPath(msiOptions.exe)).to.be(paths124.appExe);
+          await kill(msiOptions.exe);
          });
       });
     });
@@ -158,7 +163,7 @@ describe('Electron WIX MSI', () => {
       });
       it('uninstalls', async () => {
         await uninstall(msiPath);
-        expect(await checkInstall(options.name)).not.ok();
+        expect(await checkInstall(msiOptions.name)).not.ok();
         expect(fs.pathExistsSync(paths124.appRootFolder)).not.ok();
         expect(fs.pathExistsSync(paths124.startMenuShortcut)).not.ok();
         expect(fs.pathExistsSync(paths124.desktopShortcut)).not.ok();
