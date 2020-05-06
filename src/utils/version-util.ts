@@ -38,8 +38,14 @@ export function getWindowsCompliantVersion(input: string): string {
   }
 }
 
-export function createMsiVersionInfoFile(version: string): string {
+export function createInstallInfoFile(productCode: string,
+                                      installVersion: string,
+                                      arch: string): string {
   const { tempFilePath } = getTempFilePath('.installInfo', 'json');
-  fs.writeJSONSync(tempFilePath, { baseVersion: version });
+  fs.writeJSONSync(tempFilePath, {
+    productCode,
+    arch,
+    installVersion,
+  });
   return tempFilePath;
 }

@@ -1,11 +1,12 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" 
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/product.html -->
-  <Product Id="*" UpgradeCode="{{UpgradeCode}}"
-          Name="{{ApplicationName}}"
-          Version="{{Version}}"
-          Manufacturer="{{Manufacturer}}"
-          Language="{{Language}}">
+  <Product Id="{{ProductCode}}" 
+           UpgradeCode="{{UpgradeCode}}"
+           Name = "{{ApplicationName}} (Machine - MSI)"
+           Version="{{Version}}"
+           Manufacturer="{{Manufacturer}}"
+           Language="{{Language}}">
     <!-- Only run this installer on Windows 7 or up (or if it"s already installed, I guess) -->
     <!-- <Condition Message="This application is only supported on Windows 7 or higher.">
       <![CDATA[Installed OR (VersionNT >= 601)]]>
@@ -15,6 +16,13 @@
              Compressed="yes"
              Comments="Windows Installer Package"
              Platform="{{Platform}}"/>
+    <!-- This will hide our Uninstall entry in Apps & Features. We doing this so
+    we can write our own which we can better control. -->
+    <Property Id="ARPSYSTEMCOMPONENT" Value="1" />
+    <!-- While the MSI package is hidden in Apps & Features, it can still be queried
+    via PowerShell and other means. To differentiate we give the public entry a slightly
+    different name to make admins life easier.  -->
+    <Property Id="VisibleProductName" Value="{{ApplicationName}} (Machine)" />
     <!-- Signals Single Package Authoring. This pacakge can pe installed perMachine
     or perUser. The mode is determined by the property below. -->
     <Property Id="ALLUSERS" Secure="yes" Value="2" />
@@ -41,27 +49,37 @@
     PurgeOnUninstall action. Since this package can be installed perUser or perMachine,
     we have to look in both places. First successful search wins. -->
     <Property Id="INSTALLPATH">
-      <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}"
+      <RegistrySearch Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{{{ProductCode}}}.msiSquirrel"
                       Root="HKCU" 
                       Type="raw"
                       Id="INSTALLPATH_REGSEARCH_HKCU"
                       Name="InstallPath"
                       Win64="{{Win64YesNo}}"/>
-      <RegistrySearch Key="SOFTWARE\{{Manufacturer}}\{{ApplicationName}}"
+      <RegistrySearch Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{{{ProductCode}}}.msiSquirrel"
                       Root="HKLM" 
                       Type="raw"
                       Id="INSTALLPATH_REGSEARCH_HKLM"
                       Name="InstallPath"
                       Win64="{{Win64YesNo}}"/>
     </Property>
-    
+    <!-- Lets change the product name depending on the perUser installMode. 
+    This way the user and admins can see in which scope the MSI was installed. -->
+    <SetProperty Action="SetVisibleProductName" Id="VisibleProductName" Sequence="both" Before="AppSearch"  Value="{{ApplicationName}} (User)">
+      <![CDATA[MSIINSTALLPERUSER = "1"]]>
+    </SetProperty>
+    <!-- Again we give thee MSI generaten entry a slightly different name to help 
+    differentiate between the public one and the invisible one. -->
+    <SetProperty Action="SetProductName" Id="ProductName" Sequence="both" Before="AppSearch"  Value="{{ApplicationName}} (User - MSI)">
+      <![CDATA[MSIINSTALLPERUSER = "1"]]>
+    </SetProperty>
+
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
 
     <!-- Handle Updates -->
     <Upgrade Id="{{UpgradeCode}}">
       <UpgradeVersion OnlyDetect="no" Property="PREVIOUSFOUND"
           Minimum="0.0.0" IncludeMinimum="yes"
-          Maximum="{{Version}}" IncludeMaximum="yes" />
+          Maximum="{{Version}}" IncludeMaximum="yes" /> 
     </Upgrade>
 
     <InstallExecuteSequence>
@@ -128,13 +146,13 @@
     <!-- Lets cleanup any files that are were not part of the initial install
     via this MSI. Such as newer versions installed by the auto-updater. -->
     <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
-      <Component Id="PurgeOnUninstall" Guid="9c034d1f-e0e7-42f8-92b0-40e7d895217c" Win64="{{Win64YesNo}}">
+      <Component Id="PurgeOnUninstall" Guid="{{RandomGuid}}" Win64="{{Win64YesNo}}">
         <CreateFolder/>
         <util:RemoveFolderEx On="uninstall" Property="INSTALLPATH" />
       </Component>
     </DirectoryRef>
 
-    <Feature Id="Complete" Title="{{ApplicationName}} ({{Version}})" Description="The complete package." Display="expand" Level="1" {{ConfigurableDirectory}}>
+    <Feature Id="Complete" Title="{{ApplicationName}} ({{SemanticVersion}})" Description="The complete package." Display="expand" Level="1" {{ConfigurableDirectory}}>
       <!-- Step 5: Tell WiX to install the files -->
       <Feature Id="MainApplication" Title="Main Application" Level="1" Description="The main components to run the applications." >
 <!-- {{ComponentRefs}} -->
