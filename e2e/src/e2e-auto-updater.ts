@@ -5,7 +5,7 @@ import path from 'path';
 import { getWindowsCompliantVersion } from '../../lib/utils/version-util';
 import { expectSameFolderContent } from './common';
 import { getProcessPath, kill, launch, runs } from './utils/app-process';
-import { autoUpdate, checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershell } from './utils/installer';
+import { autoUpdate, checkInstall, getInstallPaths, install, installFeature, uninstall, uninstallViaPowershell } from './utils/installer';
 import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
 import { hasAccessRights } from './utils/ntfs';
 import { getRegistryKeyValue } from './utils/registry';
@@ -86,10 +86,26 @@ describe('MSI auto-updating', () => {
           });
 
           it(`installs (userGroup: ${config.effectiveUserGroup})`, async () => {
-            await install(msiPath, 3, config.userGroup);
+            await install(msiPath, 2, config.userGroup);
             const version = getWindowsCompliantVersion(msiOptions.version);
             expect(await checkInstall(`${msiOptions.name} (Machine)`, msiOptions.version)).ok();
             expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`, version)).ok();
+          });
+
+          it(`doesn't auto-updates when auto-update disabled (userGroup: ${config.effectiveUserGroup})`, async () => {
+            const server = serveSquirrel(OUT_SQRL_DIR);
+            await autoUpdate(msiPaths123beta.updateExe, server);
+            stopServingSquirrel();
+            expect(await checkInstall(`${msiOptions.name} (Machine)`, msiOptions.version)).ok();
+          });
+
+          it(`installs auto-updater (userGroup: ${config.effectiveUserGroup})`, async () => {
+            await installFeature(msiPath, 'AutoUpdater', config.userGroup);
+            const version = getWindowsCompliantVersion(msiOptions.version);
+            expect(await checkInstall(`${msiOptions.name} (Machine)`, msiOptions.version)).ok();
+            expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`, version)).ok();
+            const regValue = await getRegistryKeyValue(msiPaths123beta.registryAutoUpdateKey, 'AutoUpdate');
+            expect(regValue).to.be('1');
           });
 
           it(`auto-updates (userGroup: ${config.effectiveUserGroup})`, async () => {
