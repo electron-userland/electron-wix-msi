@@ -80,10 +80,6 @@ describe('MSI auto-updating', () => {
 
       installConfigs.forEach((config) => {
         describe((`userGroup:${config.effectiveUserGroup}`), () => {
-          before(() => {
-            // even if we failed, we still wanna leave behind a clean state for the next test
-
-          });
           after(() => {
             // even if we failed, we still wanna leave behind a clean state for the next test
             fs.rmdirSync(msiPaths123beta.appRootFolder, { recursive: true });
