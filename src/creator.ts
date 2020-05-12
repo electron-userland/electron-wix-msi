@@ -6,17 +6,17 @@ import { spawnPromise } from './utils/spawn';
 
 import { Component,
          ComponentRef,
+         featureAffinity,
          File,
          FileComponent,
          FileFolderTree,
-         isFileComponent,
          Registry,
          StringMap } from './interfaces';
 import { addFilesToTree, arrayToTree } from './utils/array-to-tree';
 import { hasCandle, hasLight } from './utils/detect-wix';
 import { createStubExe } from './utils/rc-edit';
 import { replaceInString, replaceToFile } from './utils/replace';
-import { getWindowsCompliantVersion } from './utils/version-util';
+import { createInstallInfoFile, getWindowsCompliantVersion } from './utils/version-util';
 import { getDirectoryStructure } from './utils/walker';
 
 const getTemplate = (name: string, trimTrailingNewLine: boolean = false) => {
@@ -82,6 +82,7 @@ export class MSICreator {
   // Default Templates
   public fileComponentTemplate = getTemplate('file-component');
   public registryComponentTemplate = getTemplate('registry-component');
+  public permissionTemplate = getTemplate('permission');
   public componentRefTemplate = getTemplate('component-ref');
   public directoryTemplate = getTemplate('directory');
   public wixTemplate = getTemplate('wix');
@@ -120,11 +121,14 @@ export class MSICreator {
   public autoUpdate: boolean;
   public autoLaunch: boolean;
   public defaultInstallMode: 'perUser' | 'perMachine';
+  public productCode: string;
 
   public ui: UIOptions | boolean;
 
   private files: Array<string> = [];
+  private specialFiles: Array<File> = [];
   private directories: Array<string> = [];
+  private registry: Array<Registry> = [];
   private tree: FileFolderTree | undefined;
   private components: Array<Component> = [];
 
@@ -151,6 +155,7 @@ export class MSICreator {
     this.windowsCompliantVersion = getWindowsCompliantVersion(options.version);
     this.arch = options.arch || 'x86';
     this.defaultInstallMode = options.defaultInstallMode || 'perMachine';
+    this.productCode = uuid().toUpperCase();
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`;
@@ -173,9 +178,13 @@ export class MSICreator {
    */
   public async create(): Promise<{ wxsFile: string, wxsContent: string }> {
     const { files, directories } = await getDirectoryStructure(this.appDirectory);
+    const registry = this.getRegistryKeys();
+    const specialFiles = await this.getSpecialFiles();
 
     this.files = files;
+    this.specialFiles = specialFiles;
     this.directories = directories;
+    this.registry = registry;
     this.tree = await this.getTree();
 
     const { wxsContent, wxsFile } = await this.createWxs();
@@ -224,9 +233,9 @@ export class MSICreator {
     const base = path.basename(this.appDirectory);
     const directories = await this.getDirectoryForTree(
       this.tree!, base, 8, this.programFilesFolderName, ROOTDIR_NAME);
-    const componentRefs = await this.getMainAppComponentRefs();
-    const updaterComponentRefs = await this.getUpdaterComponentRefs();
-    const autoLaunchComponentRefs = await this.getAutoLaunchComponentRefs();
+    const componentRefs = await this.getFeatureComponentRefs('main');
+    const updaterComponentRefs = await this.getFeatureComponentRefs('autoUpdate');
+    const autoLaunchComponentRefs = await this.getFeatureComponentRefs('autoLaunch');
     let enableChooseDirectory = false;
     if (typeof this.ui === 'object' && this.ui !== 'null') {
       const { chooseDirectory } = this.ui;
@@ -257,6 +266,7 @@ export class MSICreator {
       '{{ShortcutName}}': this.shortcutName,
       '{{UpgradeCode}}': this.upgradeCode,
       '{{Version}}': this.windowsCompliantVersion,
+      '{{SemanticVersion}}': this.semanticVersion,
       '{{Platform}}': this.arch,
       '{{ProgramFilesFolder}}': this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
       '{{ProcessorArchitecture}}' : this.arch,
@@ -264,6 +274,8 @@ export class MSICreator {
       '{{DesktopShortcutGuid}}': uuid(),
       '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
       '{{InstallPerUser}}': this.defaultInstallMode === 'perUser' ? '1' : '0',
+      '{{ProductCode}}': this.productCode,
+      '{{RandomGuid}}': uuid().toString(),
       '\r\n.*{{remove newline}}': ''
     };
 
@@ -477,69 +489,28 @@ export class MSICreator {
    */
   private async getTree(): Promise<FileFolderTree> {
     const root = this.appDirectory;
-    const stubExe = await createStubExe(this.appDirectory,
-                                        this.exe,
-                                        this.name,
-                                        this.manufacturer,
-                                        this.description,
-                                        this.windowsCompliantVersion,
-                                        this.iconPath);
 
     const folderTree = arrayToTree(this.directories, root, this.semanticVersion);
     const fileFolderTree = addFilesToTree(folderTree,
                                           this.files,
-                                          this.exe,
-                                          stubExe,
-                                          this.autoUpdate,
-                                          this.autoLaunch,
+                                          this.specialFiles,
+                                          this.registry,
                                           this.semanticVersion);
 
     return fileFolderTree;
   }
 
   /**
-   * Creates Wix MainApp <ComponentRefs> components.
+   * Creates Wix <ComponentRefs> components by feature.
    *
    * @returns {<Array<ComponentRef>}
    */
-  private getMainAppComponentRefs(): Array<ComponentRef> {
+  private getFeatureComponentRefs(feature: featureAffinity): Array<ComponentRef> {
     return this.components
-      .filter((c) => (!isFileComponent(c) && c.componentId !== 'RegistryRunKey') ||
-        (isFileComponent(c) && c.file.name !== 'Update.exe'))
+      .filter((c) => c.featureAffinity === feature)
       .map(({ componentId }) => {
         const xml = replaceInString(this.componentRefTemplate, {
           '<!-- {{I}} -->': '        ',
-          '{{ComponentId}}': componentId
-        });
-
-        return { componentId, xml };
-    });
-  }
-
-  /**
-   * Creates auto-update <ComponentRefs> components.
-   *
-   * @returns {<Array<ComponentRef>}
-   */
-  private getUpdaterComponentRefs(): Array<ComponentRef> {
-    return this.components
-      .filter((c) => isFileComponent(c) && c.file.name === 'Update.exe')
-      .map(({ componentId }) => {
-        const xml = replaceInString(this.componentRefTemplate, {
-          '<!-- {{I}} -->': '',
-          '{{ComponentId}}': componentId
-        });
-
-        return { componentId, xml };
-    });
-  }
-
-  private getAutoLaunchComponentRefs(): Array<ComponentRef> {
-    return this.components
-      .filter((c) => !isFileComponent(c) && c.componentId === 'RegistryRunKey')
-      .map(({ componentId }) => {
-        const xml = replaceInString(this.componentRefTemplate, {
-          '<!-- {{I}} -->': '',
           '{{ComponentId}}': componentId
         });
 
@@ -565,7 +536,7 @@ export class MSICreator {
       '{{SourcePath}}': file.path
     });
 
-    return { guid, componentId, xml, file };
+    return { guid, componentId, xml, file, featureAffinity: file.featureAffinity || 'main' };
   }
 
   /**
@@ -576,6 +547,10 @@ export class MSICreator {
    */
   private getRegistryComponent(registry: Registry, indent: number): Component {
     const guid = uuid();
+    const permissionXml = registry.permission ? replaceInString(this.permissionTemplate, {
+      '{{User}}': registry.permission.user,
+      '{{GenericAll}}': registry.permission.genericAll,
+    }) : '{{remove newline}}';
     const xml = replaceInString(this.registryComponentTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
       '{{ComponentId}}': registry.id,
@@ -585,8 +560,9 @@ export class MSICreator {
       '{{Key}}': registry.key,
       '{{Type}}': registry.type,
       '{{Value}}': registry.value,
+      '<!-- {{Permission}} -->': permissionXml
     });
-    return { guid, componentId: registry.id, xml };
+    return { guid, componentId: registry.id, xml, featureAffinity: registry.featureAffinity || 'main' };
   }
 
   /**
@@ -605,5 +581,144 @@ export class MSICreator {
     const uniqueId = `_${pathPart}_${uuid()}`;
 
     return uniqueId.replace(/[^A-Za-z0-9_\.]/g, '_');
+  }
+
+  private async getSpecialFiles(): Promise<Array<File>> {
+    const specialFiles = new Array<File>();
+
+    const stubExe = await createStubExe(this.appDirectory,
+      this.exe,
+      this.name,
+      this.manufacturer,
+      this.description,
+      this.windowsCompliantVersion,
+      this.iconPath);
+
+    const installInfoFile = createInstallInfoFile(this.productCode,
+      this.semanticVersion,
+      this.arch);
+
+    // inject a stub executable into he root directory since the actual
+    // exe has been placed in a versioned sub-folder.
+    specialFiles.push({ name: `${this.exe}.exe`, path:  stubExe});
+
+    // injects an information file that helps the installed app to verify info about the installation
+    specialFiles.push({ name: `.installInfo.json`, path: installInfoFile });
+
+
+    // inject the Squirrel updater into he root directory if auto-update is enabled
+    if (this.autoUpdate) {
+      specialFiles.push({
+        name: `Update.exe`,
+        path:  path.join(__dirname, '../vendor/msq.exe'),
+        featureAffinity: 'autoUpdate'
+      });
+    }
+
+    return specialFiles;
+  }
+
+  private getRegistryKeys(): Array<Registry> {
+    const registry = new Array<Registry>();
+    const uninstallKey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msiSquirrel';
+
+    // On install we need to keep track of our install folder.
+    // We then can utilize that registry value to purge our install folder on uninstall.
+    registry.push({
+      id: 'RegistryInstallPath',
+      root: 'HKMU',
+      name: 'InstallPath',
+      key: uninstallKey,
+      type: 'string',
+      value: '[APPLICATIONROOTDIRECTORY]',
+    });
+
+    // The following keys are for our uninstall entry because we hiding the original one.
+    // This allows us to set permissions in case the auto-updater is installed.
+    registry.push({
+      id: 'UninstallDisplayName',
+      root: 'HKMU',
+      name: 'DisplayName',
+      key: uninstallKey,
+      type: 'string',
+      value: '[VisibleProductName]',
+    });
+
+    registry.push({
+      id: 'UninstallPublisher',
+      root: 'HKMU',
+      name: 'Publisher',
+      key: uninstallKey,
+      type: 'string',
+      value: '{{Manufacturer}}',
+    });
+
+    registry.push({
+      id: 'UninstallDisplayVersion',
+      root: 'HKMU',
+      name: 'DisplayVersion',
+      key: uninstallKey,
+      type: 'string',
+      value: '{{SemanticVersion}}',
+    });
+
+    registry.push({
+      id: 'UninstallModifyString',
+      root: 'HKMU',
+      name: 'ModifyPath',
+      key: uninstallKey,
+      type: 'expandable',
+      value: 'MsiExec.exe /I {{{ProductCode}}}',
+    });
+
+    registry.push({
+      id: 'UninstallString',
+      root: 'HKMU',
+      name: 'UninstallString',
+      key: uninstallKey,
+      type: 'expandable',
+      value: 'MsiExec.exe /X {{{ProductCode}}}',
+    });
+
+    registry.push({
+      id: 'UninstallDisplayIcon',
+      root: 'HKMU',
+      name: 'DisplayIcon',
+      key: uninstallKey,
+      type: 'expandable',
+      value: this.arch === 'x86' ? '[SystemFolder]msiexec.exe' : '[System64Folder]msiexec.exe',
+    });
+
+    if (this.autoUpdate) {
+      // Yes, we putting the version string reg key in again. But this time we get
+      // ourselves write access for the auto updater user group.
+      registry.push({
+        id: 'SetUninstallDisplayVersionPermissions',
+        root: 'HKMU',
+        name: 'DisplayVersion',
+        key: uninstallKey,
+        type: 'string',
+        value: '{{SemanticVersion}}',
+        featureAffinity: 'autoUpdate',
+        permission: {
+          user: '[UPDATERUSERGROUP]',
+          genericAll: 'yes'
+        }
+      });
+    }
+
+    if (this.autoLaunch) {
+      registry.push({
+        id: 'RegistryRunKey',
+        root: 'HKMU',
+        name: '{{AppUserModelId}}',
+        key: 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',
+        type: 'string',
+        value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe',
+        featureAffinity: 'autoLaunch'
+      });
+    }
+
+    return registry;
   }
 }

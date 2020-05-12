@@ -1,12 +1,13 @@
 import { cloneDeep, defaultsDeep } from 'lodash';
 import * as mockFs from 'mock-fs';
 
+import { Registry } from '../../src/interfaces';
 import { addFilesToTree, arrayToTree, isChild, isDirectChild } from '../../src/utils/array-to-tree';
 import { separator as S } from '../../src/utils/separator';
 import { getMockFileSystem } from '../mocks/mock-fs';
 
 const installInfoRegex = process.platform === 'win32' ? /C:\\tmp\\\.installInfo.*\\\.installInfo\.json/ : /\/tmp\/\.installInfo.*\.installInfo\.json/;
-const msiAwareSquirrelRegex = process.platform === 'win32' ? /.*\\vendor\\MsiAwareSquirrel_1\.9\.1\.exe/ : /.*\/vendor\/MsiAwareSquirrel_1\.9\.1\.exe/;
+const msqSquirrelRegex = process.platform === 'win32' ? /.*\\vendor\\msq.exe/ : /.*\/vendor\/msq.exe/;
 const originalTmp = process.env.TEMP;
 
 const mockFolders = [
@@ -25,6 +26,27 @@ const mockFiles = [
   `slack${S}resources${S}app.asar.unpacked${S}src${S}package.json`,
   `slack${S}locales${S}de-DE.json`,
   `slack${S}locales${S}en-US.json`,
+];
+
+const mockSpecialFiles = [
+  { name: `slack.exe`, path:  `C:${S}temp${S}slack.exe`},
+  { name: `.installInfo.json`, path: 'C:\\temp\\installInfo.json' }
+];
+
+const mockUpdaterSpecialFiles = [
+  ...mockSpecialFiles,
+  { name: `Update.exe`, path: 'C:\\temp\\Update.exe' }
+];
+
+const mockRegistry: Array<Registry> = [
+  {
+    id: 'RegistryInstallPath',
+    root: 'HKMU',
+    name: 'InstallPath',
+    key: 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationName}}',
+    type: 'string',
+    value: '[APPLICATIONROOTDIRECTORY]',
+  }
 ];
 
 const mockFolderTree = {
@@ -73,7 +95,7 @@ const mockFolderTree = {
 const mockFolderFileTree = defaultsDeep(cloneDeep(mockFolderTree), {
   __ELECTRON_WIX_MSI_FILES__:  [ { name: 'slack.exe', path: `C:${S}temp${S}slack.exe` },
     { name: '.installInfo.json',
-      path: expect.stringMatching(installInfoRegex) } ],
+      path: 'C:\\temp\\installInfo.json' }],
   __ELECTRON_WIX_MSI_REGISTRY__: [{
     id: 'RegistryInstallPath',
     key: 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationName}}',
@@ -165,19 +187,19 @@ test(`arrayToTree() creates a tree structure`, () => {
 });
 
 test(`addFilesToTree() adds files to a tree structure`, () => {
-  const folderFileTree = addFilesToTree(mockFolderTree, mockFiles, `slack`, `C:${S}temp${S}slack.exe`, false, false, '1.0.0');
+  const folderFileTree = addFilesToTree(mockFolderTree, mockFiles, mockSpecialFiles, mockRegistry, '1.0.0');
   expect(folderFileTree).toEqual(mockFolderFileTree);
 });
 
-test(`addFilesToTree() adds files to a tree structure on Mac`, () => {
+test(`addFilesToTree() adds files to a tree structure`, () => {
   const updaterMockFolderFileTree = cloneDeep(mockFolderFileTree);
   updaterMockFolderFileTree.__ELECTRON_WIX_MSI_FILES__ = [ { name: 'slack.exe', path: `C:${S}temp${S}slack.exe` },
     { name: '.installInfo.json',
-      path: expect.stringMatching(installInfoRegex) },
+      path: 'C:\\temp\\installInfo.json' },
     { name: 'Update.exe',
-    path:  expect.stringMatching(msiAwareSquirrelRegex)
-  } ];
+      path: 'C:\\temp\\Update.exe'
+    } ];
   const folderFileTree =
-    addFilesToTree(mockFolderTree, mockFiles, `slack`, `C:${S}temp${S}slack.exe`, true, false, '1.0.0');
+    addFilesToTree(mockFolderTree, mockFiles,  mockUpdaterSpecialFiles, mockRegistry, '1.0.0');
   expect(folderFileTree).toEqual(updaterMockFolderFileTree);
 });

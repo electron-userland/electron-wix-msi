@@ -1,3 +1,5 @@
 <!-- {{I}} --><Component Id="{{ComponentId}}" Guid="{{Guid}}" Win64="{{Win64YesNo}}">
-<!-- {{I}} -->  <RegistryValue Root="{{Root}}" Key="{{Key}}" Name="{{Name}}" Type="{{Type}}" Value="{{Value}}" KeyPath="yes" />
+<!-- {{I}} -->  <RegistryValue Root="{{Root}}" Key="{{Key}}" Name="{{Name}}" Type="{{Type}}" Value="{{Value}}" KeyPath="yes">
+<!-- {{I}} -->    <!-- {{Permission}} -->
+<!-- {{I}} -->  </RegistryValue>
 <!-- {{I}} --></Component>
