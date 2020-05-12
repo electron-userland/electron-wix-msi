@@ -594,9 +594,11 @@ export class MSICreator {
       this.windowsCompliantVersion,
       this.iconPath);
 
-    const installInfoFile = createInstallInfoFile(this.productCode,
-      this.semanticVersion,
-      this.arch);
+    const installInfoFile = createInstallInfoFile(this.manufacturer,
+                                                  this.name,
+                                                  this.productCode,
+                                                  this.semanticVersion,
+                                                  this.arch);
 
     // inject a stub executable into he root directory since the actual
     // exe has been placed in a versioned sub-folder.
@@ -605,15 +607,12 @@ export class MSICreator {
     // injects an information file that helps the installed app to verify info about the installation
     specialFiles.push({ name: `.installInfo.json`, path: installInfoFile });
 
-
-    // inject the Squirrel updater into he root directory if auto-update is enabled
-    if (this.autoUpdate) {
-      specialFiles.push({
-        name: `Update.exe`,
-        path:  path.join(__dirname, '../vendor/msq.exe'),
-        featureAffinity: 'autoUpdate'
-      });
-    }
+    // inject the Squirrel updater into the root directory
+    specialFiles.push({
+      name: `Update.exe`,
+      path:  path.join(__dirname, '../vendor/msq.exe'),
+      featureAffinity: 'main'
+    });
 
     return specialFiles;
   }
@@ -621,6 +620,7 @@ export class MSICreator {
   private getRegistryKeys(): Array<Registry> {
     const registry = new Array<Registry>();
     const uninstallKey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msiSquirrel';
+    const productRegKey = 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationName}}';
 
     // On install we need to keep track of our install folder.
     // We then can utilize that registry value to purge our install folder on uninstall.
@@ -704,6 +704,16 @@ export class MSICreator {
           user: '[UPDATERUSERGROUP]',
           genericAll: 'yes'
         }
+      });
+
+      registry.push({
+        id: 'AutoUpdateEnabled',
+        root: 'HKMU',
+        name: 'AutoUpdate',
+        key: productRegKey,
+        type: 'integer',
+        value: '1',
+        featureAffinity: 'autoUpdate',
       });
     }
 

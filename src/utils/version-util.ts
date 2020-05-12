@@ -38,11 +38,15 @@ export function getWindowsCompliantVersion(input: string): string {
   }
 }
 
-export function createInstallInfoFile(productCode: string,
+export function createInstallInfoFile(manufacturer: string,
+                                      appName: string,
+                                      productCode: string,
                                       installVersion: string,
                                       arch: string): string {
   const { tempFilePath } = getTempFilePath('.installInfo', 'json');
   fs.writeJSONSync(tempFilePath, {
+    manufacturer,
+    appName,
     productCode,
     arch,
     installVersion,
