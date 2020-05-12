@@ -176,7 +176,7 @@ export class MSICreator {
    *
    * @returns {Promise<{ wxsFile: string, wxsContent: string }>}
    */
-  public async create(): Promise<{ wxsFile: string, wxsContent: string }> {
+  public async create(): Promise<{ wxsFile: string, wxsContent: string, supportBinaries: Array<string> }> {
     const { files, directories } = await getDirectoryStructure(this.appDirectory);
     const registry = this.getRegistryKeys();
     const specialFiles = await this.getSpecialFiles();
@@ -190,7 +190,8 @@ export class MSICreator {
     const { wxsContent, wxsFile } = await this.createWxs();
     this.wxsFile = wxsFile;
 
-    return { wxsContent, wxsFile };
+    const supportBinaries = this.specialFiles.filter((f) => f.path.endsWith('.exe')).map((f) => f.path);
+    return { wxsContent, wxsFile, supportBinaries };
   }
 
   /**
