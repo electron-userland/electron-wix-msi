@@ -24,6 +24,7 @@ export interface InstallPaths {
   appUserModelId: string;
   registryRunKey: string;
   registryUninstallKey: string;
+  registryAutoUpdateKey: string;
 }
 
 export const install = async (msi: string, installLevel: 1 | 2 | 3 = 2, autoUpdaterUserGroup?: string, installMode?: 'perUser' | 'perMachine') => {
@@ -40,6 +41,20 @@ export const install = async (msi: string, installLevel: 1 | 2 | 3 = 2, autoUpda
   }
   if (installMode === 'perUser') {
     args.push(`MSIINSTALLPERUSER=1`);
+  }
+  args.push('/qb');
+  return spawnPromise('msiexec.exe', args);
+};
+
+export const installFeature = async (msi: string, feature: string, autoUpdaterUserGroup?: string) => {
+  const args = ['/i', msi];
+
+  if (feature) {
+    args.push(`ADDLOCAL=${feature}`);
+  }
+
+  if (autoUpdaterUserGroup) {
+    args.push(`UPDATERUSERGROUP=${autoUpdaterUserGroup}`);
   }
   args.push('/qb');
   return spawnPromise('msiexec.exe', args);
@@ -104,6 +119,7 @@ export const getInstallPaths = (options: MSICreatorOptions | SquirrelOptions,
   const registryRunKey = `${registryRoot}:\\SOFTWARE\\${registryWow}Microsoft\\Windows\\CurrentVersion\\Run`;
   const registryUninstallKey =
     `${registryRoot}:\\SOFTWARE\\${registryWow}Microsoft\\Windows\\CurrentVersion\\Uninstall`;
+  const registryAutoUpdateKey = isMSICreatorOptions(options) ? `${registryRoot}:\\SOFTWARE\\${registryWow}\\${options.manufacturer}\\${options.name}` : '';
 
   const startMenuRoot = path.join(installMode === 'perMachine' ? process.env.ProgramData! : process.env['APPDATA']!, 'Microsoft/Windows/Start Menu/Programs/');
   const home = installMode === 'perMachine' ? process.env.Public! : process.env['home']!;
@@ -117,6 +133,7 @@ export const getInstallPaths = (options: MSICreatorOptions | SquirrelOptions,
     desktopShortcut: isMSICreatorOptions(options) ? path.join(home, `Desktop/${options.shortcutName || options.name}.lnk`) : '',
     appUserModelId,
     registryRunKey,
-    registryUninstallKey
+    registryUninstallKey,
+    registryAutoUpdateKey
   };
 };
