@@ -142,7 +142,7 @@ describe('MSI auto-updating', () => {
           });
 
           it(`has called msq self-update (userGroup: ${config.effectiveUserGroup})`, () => {
-            const selfUpdateLog = path.join(squirrelPaths130.appFolder, 'Squirrel-UpdateSelf.log');
+            const selfUpdateLog = path.join(squirrelPaths130.appFolder, 'MSQ-UpdateSelf.log');
             expect(fs.pathExistsSync(selfUpdateLog)).ok();
             const logContent = fs.readFileSync(selfUpdateLog, 'utf-8');
             expect(logContent.includes('--updateSelf')).ok();
