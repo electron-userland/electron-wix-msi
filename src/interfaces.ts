@@ -53,6 +53,8 @@ export interface Registry extends AppElement {
   name: string;
   value: string;
   type: 'string' | 'integer' | 'binary' | 'expandable' | 'multiString';
+  forceCreateOnInstall?: 'yes' | 'no';
+  forceDeleteOnUninstall?: 'yes' | 'no';
   permission?: {
     user: string;
     genericAll: 'yes' | 'no';

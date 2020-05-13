@@ -457,7 +457,7 @@ export class MSICreator {
       });
     const childFiles = tree.__ELECTRON_WIX_MSI_FILES__
       .map((file) => {
-        const component = this.getComponent(file, indent + 2);
+        const component = this.getFileComponent(file, indent + 2);
         this.components.push(component);
         return component.xml;
       });
@@ -523,9 +523,9 @@ export class MSICreator {
    * Creates Wix <Components> for all files.
    *
    * @param {File}
-   * @returns {FileComponent}
+   * @returns {RegistryComponent}
    */
-  private getComponent(file: File, indent: number): FileComponent {
+  private getFileComponent(file: File, indent: number): FileComponent {
     const guid = uuid();
     const componentId = this.getComponentId(file.path);
     const xml = replaceInString(this.fileComponentTemplate, {
@@ -544,7 +544,7 @@ export class MSICreator {
    * Creates Wix <Components> for all registry values.
    *
    * @param {File}
-   * @returns {FileComponent}
+   * @returns {RegistryComponent}
    */
   private getRegistryComponent(registry: Registry, indent: number): Component {
     const guid = uuid();
@@ -561,6 +561,8 @@ export class MSICreator {
       '{{Key}}': registry.key,
       '{{Type}}': registry.type,
       '{{Value}}': registry.value,
+      '{{ForceCreateOnInstall}}': registry.forceCreateOnInstall || 'no',
+      '{{ForceDeleteOnUninstall}}': registry.forceDeleteOnUninstall || 'no',
       '<!-- {{Permission}} -->': permissionXml
     });
     return { guid, componentId: registry.id, xml, featureAffinity: registry.featureAffinity || 'main' };
@@ -620,7 +622,7 @@ export class MSICreator {
 
   private getRegistryKeys(): Array<Registry> {
     const registry = new Array<Registry>();
-    const uninstallKey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msiSquirrel';
+    const uninstallKey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msq';
     const productRegKey = 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationShortName}}';
 
     // On install we need to keep track of our install folder.
@@ -632,6 +634,7 @@ export class MSICreator {
       key: uninstallKey,
       type: 'string',
       value: '[APPLICATIONROOTDIRECTORY]',
+      forceDeleteOnUninstall: 'yes'
     });
 
     // The following keys are for our uninstall entry because we hiding the original one.
@@ -643,6 +646,7 @@ export class MSICreator {
       key: uninstallKey,
       type: 'string',
       value: '[VisibleProductName]',
+      forceDeleteOnUninstall: 'yes'
     });
 
     registry.push({
@@ -652,6 +656,7 @@ export class MSICreator {
       key: uninstallKey,
       type: 'string',
       value: '{{Manufacturer}}',
+      forceDeleteOnUninstall: 'yes'
     });
 
     registry.push({
@@ -661,6 +666,7 @@ export class MSICreator {
       key: uninstallKey,
       type: 'string',
       value: '{{SemanticVersion}}',
+      forceDeleteOnUninstall: 'yes'
     });
 
     registry.push({
@@ -670,6 +676,7 @@ export class MSICreator {
       key: uninstallKey,
       type: 'expandable',
       value: 'MsiExec.exe /I {{{ProductCode}}}',
+      forceDeleteOnUninstall: 'yes'
     });
 
     registry.push({
@@ -679,6 +686,7 @@ export class MSICreator {
       key: uninstallKey,
       type: 'expandable',
       value: 'MsiExec.exe /X {{{ProductCode}}}',
+      forceDeleteOnUninstall: 'yes'
     });
 
     registry.push({
@@ -688,6 +696,7 @@ export class MSICreator {
       key: uninstallKey,
       type: 'expandable',
       value: this.arch === 'x86' ? '[SystemFolder]msiexec.exe' : '[System64Folder]msiexec.exe',
+      forceDeleteOnUninstall: 'yes'
     });
 
     if (this.autoUpdate) {
@@ -704,7 +713,8 @@ export class MSICreator {
         permission: {
           user: '[UPDATERUSERGROUP]',
           genericAll: 'yes'
-        }
+        },
+        forceCreateOnInstall: 'yes',
       });
 
       registry.push({
@@ -715,6 +725,7 @@ export class MSICreator {
         type: 'integer',
         value: '1',
         featureAffinity: 'autoUpdate',
+        forceDeleteOnUninstall: 'yes'
       });
     }
 
@@ -726,7 +737,8 @@ export class MSICreator {
         key: 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',
         type: 'string',
         value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe',
-        featureAffinity: 'autoLaunch'
+        featureAffinity: 'autoLaunch',
+        forceDeleteOnUninstall: 'yes'
       });
     }
 
