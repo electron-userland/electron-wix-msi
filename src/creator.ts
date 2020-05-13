@@ -589,14 +589,14 @@ export class MSICreator {
 
     const stubExe = await createStubExe(this.appDirectory,
       this.exe,
-      this.name,
+      this.shortName,
       this.manufacturer,
       this.description,
       this.windowsCompliantVersion,
       this.iconPath);
 
     const installInfoFile = createInstallInfoFile(this.manufacturer,
-                                                  this.name,
+                                                  this.shortName,
                                                   this.productCode,
                                                   this.semanticVersion,
                                                   this.arch);
@@ -621,7 +621,7 @@ export class MSICreator {
   private getRegistryKeys(): Array<Registry> {
     const registry = new Array<Registry>();
     const uninstallKey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msiSquirrel';
-    const productRegKey = 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationName}}';
+    const productRegKey = 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationShortName}}';
 
     // On install we need to keep track of our install folder.
     // We then can utilize that registry value to purge our install folder on uninstall.
