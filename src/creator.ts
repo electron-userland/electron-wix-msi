@@ -620,7 +620,7 @@ export class MSICreator {
 
   private getRegistryKeys(): Array<Registry> {
     const registry = new Array<Registry>();
-    const uninstallKey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msiSquirrel';
+    const uninstallKey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msq';
     const productRegKey = 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationShortName}}';
 
     // On install we need to keep track of our install folder.

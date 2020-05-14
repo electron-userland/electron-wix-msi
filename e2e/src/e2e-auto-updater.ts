@@ -80,11 +80,6 @@ describe('MSI auto-updating', () => {
 
       installConfigs.forEach((config) => {
         describe((`userGroup:${config.effectiveUserGroup}`), () => {
-          after(() => {
-            // even if we failed, we still wanna leave behind a clean state for the next test
-            fs.rmdirSync(msiPaths123beta.appRootFolder, { recursive: true });
-          });
-
           it(`installs (userGroup: ${config.effectiveUserGroup})`, async () => {
             await install(msiPath, 2, config.userGroup);
             const version = getWindowsCompliantVersion(msiOptions.version);
@@ -135,7 +130,7 @@ describe('MSI auto-updating', () => {
           regValues.forEach(async (value) => {
             it(`has uninstall registry key has value: ${value.name} (${testConfig.arch})`, async () => {
               const installInfo = fs.readJSONSync(path.join(msiPaths123beta.appRootFolder, '.installInfo.json'));
-              const regKey = `${msiPaths123beta.registryUninstallKey}\\{${installInfo.productCode}}.msiSquirrel`;
+              const regKey = `${msiPaths123beta.registryUninstallKey}\\{${installInfo.productCode}}.msq`;
               const regValue = await getRegistryKeyValue(regKey, value.name);
               expect(regValue).to.be(value.value);
             });
@@ -170,7 +165,9 @@ describe('MSI auto-updating', () => {
 
           it(`uninstalls (userGroup: ${config.effectiveUserGroup})`, async () => {
             await uninstall(msiPath);
-            expect(await checkInstall(msiOptions.name)).not.ok();
+            expect(await checkInstall(`${msiOptions.name} (Machine)`)).not.ok();
+            expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`)).not.ok();
+            console.log(msiPaths123beta.appRootFolder);
             expect(fs.pathExistsSync(msiPaths123beta.appRootFolder)).not.ok();
             expect(fs.pathExistsSync(msiPaths123beta.startMenuShortcut)).not.ok();
             expect(fs.pathExistsSync(msiPaths123beta.desktopShortcut)).not.ok();

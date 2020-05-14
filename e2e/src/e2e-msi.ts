@@ -157,13 +157,10 @@ describe('Electron WIX MSI', () => {
     });
 
     describe(`Uninstalling ${getTestConfigString()}`, () =>  {
-      after(() => {
-        // even if we failed, we still wanna leave behind a clean state for the next test
-        fs.rmdirSync(paths124.appRootFolder, { recursive: true });
-      });
       it('uninstalls', async () => {
         await uninstall(msiPath);
-        expect(await checkInstall(msiOptions.name)).not.ok();
+        expect(await checkInstall(`${msiOptions.name} (Machine)`)).not.ok();
+        expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`)).not.ok();
         expect(fs.pathExistsSync(paths124.appRootFolder)).not.ok();
         expect(fs.pathExistsSync(paths124.startMenuShortcut)).not.ok();
         expect(fs.pathExistsSync(paths124.desktopShortcut)).not.ok();

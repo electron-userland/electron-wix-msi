@@ -65,10 +65,6 @@ describe('MSI perUser install', () => {
       installConfigs.forEach((installConfig) => {
         describe((`installMode:${installConfig.installMode !== undefined ?
           installConfig.installMode : 'default' }`), () => {
-          after(() => {
-            // even if we failed, we still wanna leave behind a clean state for the next test
-            fs.rmdirSync(msiPaths123beta.appRootFolder, { recursive: true });
-          });
           let autoLaunchRegistryKeyValue = '';
           const msiPaths123beta = getInstallPaths(msiOptions, installConfig.effectiveMode);
 
@@ -116,7 +112,9 @@ describe('MSI perUser install', () => {
 
           it(`uninstalls (${testConfig.arch})`, async () => {
             await uninstall(msiPath);
-            expect(await checkInstall(msiOptions.name)).not.ok();
+            const nameSuffix = installConfig.effectiveMode  === 'perUser' ? 'User' : 'Machine';
+            expect(await checkInstall(`${msiOptions.name} (${nameSuffix})`)).not.ok();
+            expect(await checkInstall(`${msiOptions.name} (${nameSuffix} - MSI)`)).not.ok();
             expect(fs.pathExistsSync(msiPaths123beta.appRootFolder)).not.ok();
             expect(fs.pathExistsSync(msiPaths123beta.startMenuShortcut)).not.ok();
             expect(fs.pathExistsSync(msiPaths123beta.desktopShortcut)).not.ok();

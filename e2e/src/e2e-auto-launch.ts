@@ -41,11 +41,6 @@ describe('MSI auto-launch', () => {
 
   testConfigs.forEach((testConfig) => {
     describe((`arch:${testConfig.arch}`), () => {
-      after(() => {
-        // even if we failed, we still wanna leave behind a clean state for the next test
-        fs.rmdirSync(msiPaths123beta.appRootFolder, { recursive: true });
-      });
-
       const msiOptions = {
         ...autoLaunchMsiOptions,
         ...testConfig
@@ -99,7 +94,8 @@ describe('MSI auto-launch', () => {
 
       it(`uninstalls (${testConfig.arch})`, async () => {
         await uninstall(msiPath);
-        expect(await checkInstall(msiOptions.name)).not.ok();
+        expect(await checkInstall(`${msiOptions.name} (Machine)`)).not.ok();
+        expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`)).not.ok();
         expect(fs.pathExistsSync(msiPaths123beta.appRootFolder)).not.ok();
         expect(fs.pathExistsSync(msiPaths123beta.startMenuShortcut)).not.ok();
         expect(fs.pathExistsSync(msiPaths123beta.desktopShortcut)).not.ok();
