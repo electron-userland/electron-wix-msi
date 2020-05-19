@@ -149,9 +149,9 @@ regexTestIncludes('versioned app folder', /<Directory\s*Id=".*"\s*Name="app-1\.0
 regexTestIncludes('stubbed exe', /<File\s*Name="acme\.exe"\s*Id=".*"\s*Source="C:\\Stub\.exe"/);
 
 test('.wxs file has as many components as we have files', () => {
-  // Files + 2 Shortcuts + 3 special files + 7 registry +  1 purge components
+  // Files + 2 Shortcuts + 2 special files + 7 registry +  1 purge components
   const count = wxsContent.split('</Component>').length - 1;
-  expect(count).toEqual(numberOfFiles + 13);
+  expect(count).toEqual(numberOfFiles + 12);
 });
 
 test('MSICreator create() creates Wix file with UI properties', async () => {
@@ -458,7 +458,7 @@ testIncludesNot('RegistryRunKey component', '<Component Id="RegistryRunKey"');
 testIncludesNot('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
 regexTestIncludesNot('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
 regexTestIncludesNot('AutoUpdater feature', /<Feature Id="AutoUpdater" Title="Auto Updater" Level="3" .*>/);
-regexTestIncludes('Squirrel executable component-ref', /<ComponentRef Id="_msq.exe_.*" \/>/ );
+regexTestIncludesNot('Squirrel executable component-ref', /<ComponentRef Id="_msq.exe_.*" \/>/ );
 testIncludesNot('Permission component-ref',  `<ComponentRef Id="SetFolderPermissions" />`);
 testIncludesNot('RegistryRunKey component-ref', '<ComponentRef Id="SetUninstallDisplayVersionPermissions" />');
 
@@ -511,9 +511,9 @@ describe('auto-launch', () => {
   });
 
   test('.wxs file has as many components as we have files', () => {
-    // Files + 2 Shortcuts + 3 special files + 8 registry  + 1 purge components
+    // Files + 2 Shortcuts + 2 special files + 8 registry  + 1 purge components
     const count = wxsContent.split('</Component>').length - 1;
-    expect(count).toEqual(numberOfFiles + 14);
+    expect(count).toEqual(numberOfFiles + 13);
   });
 
   test('.wxs file contains as many component refs as components', () => {
