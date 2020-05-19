@@ -610,12 +610,14 @@ export class MSICreator {
     // injects an information file that helps the installed app to verify info about the installation
     specialFiles.push({ name: `.installInfo.json`, path: installInfoFile });
 
-    // inject the Squirrel updater into the root directory
-    specialFiles.push({
-      name: `Update.exe`,
-      path:  path.join(__dirname, '../vendor/msq.exe'),
-      featureAffinity: 'main'
-    });
+    if (this.autoUpdate) {
+      // inject the Squirrel updater into the root directory
+      specialFiles.push({
+        name: `Update.exe`,
+        path:  path.join(__dirname, '../vendor/msq.exe'),
+        featureAffinity: 'autoUpdate'
+      });
+    }
 
     return specialFiles;
   }
@@ -723,7 +725,7 @@ export class MSICreator {
         name: 'AutoUpdate',
         key: productRegKey,
         type: 'integer',
-        value: '1',
+        value: '[AUTOUPDATEENABLED]',
         featureAffinity: 'autoUpdate',
         forceDeleteOnUninstall: 'yes'
       });

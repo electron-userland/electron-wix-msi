@@ -45,6 +45,10 @@
     the install folder in cas the auto-updater is installed. User that run the App
     must be part of that user group to be able to auto-update. -->
     <Property Id="UPDATERUSERGROUP" Value="Users" />
+    <!-- A property to define whether the auuto-updater is enabled when the
+    feature gets installed. This way the update can be installed but also be disabled
+    by ovwrwritign the deafualt value.  -->
+    <Property Id="AUTOUPDATEENABLED" Value="1" />
     <!-- Necessary registry search to find the install path which is used by the
     PurgeOnUninstall action. Since this package can be installed perUser or perMachine,
     we have to look in both places. First successful search wins. -->
