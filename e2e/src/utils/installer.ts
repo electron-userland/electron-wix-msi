@@ -27,7 +27,7 @@ export interface InstallPaths {
   registryAutoUpdateKey: string;
 }
 
-export const install = async (msi: string, installLevel: 1 | 2 | 3 = 2, autoUpdaterUserGroup?: string, installMode?: 'perUser' | 'perMachine') => {
+export const install = async (msi: string, installLevel: 1 | 2 | 3 = 2, autoUpdaterUserGroup?: string, installMode?: 'perUser' | 'perMachine', updatesEnabled?: boolean) => {
   const args = ['/i', msi];
 
   if (installLevel !== 2) {
@@ -41,6 +41,9 @@ export const install = async (msi: string, installLevel: 1 | 2 | 3 = 2, autoUpda
   }
   if (installMode === 'perUser') {
     args.push(`MSIINSTALLPERUSER=1`);
+  }
+  if (updatesEnabled === undefined || updatesEnabled !== true) {
+    args.push(`AUTOUPDATEENABLED=0`);
   }
   args.push('/qb');
   return spawnPromise('msiexec.exe', args);
