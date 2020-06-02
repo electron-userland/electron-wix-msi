@@ -446,13 +446,13 @@ testIncludes('RegistryInstallPath component-ref',  '<ComponentRef Id="RegistryIn
 testIncludes('PurgeOnUninstall component',  '<Component Id="PurgeOnUninstall" ');
 testIncludes('PurgeOnUninstall component-ref',  '<ComponentRef Id="PurgeOnUninstall" />');
 
-testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryInstallPath" />');
-testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayName" />');
-testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallPublisher" />');
-testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayVersion" />');
-testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallModifyString" />');
-testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallString" />');
-testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayIcon" />');
+testIncludes('RegistryInstallPath component-ref', '<ComponentRef Id="RegistryInstallPath" />');
+testIncludes('UninstallDisplayName component-ref', '<ComponentRef Id="UninstallDisplayName" />');
+testIncludes('UninstallPublisher component-ref', '<ComponentRef Id="UninstallPublisher" />');
+testIncludes('UninstallDisplayVersion component-ref', '<ComponentRef Id="UninstallDisplayVersion" />');
+testIncludes('UninstallModifyString component-ref', '<ComponentRef Id="UninstallModifyString" />');
+testIncludes('UninstallString component-ref', '<ComponentRef Id="UninstallString" />');
+testIncludes('UninstallDisplayIcon component-ref', '<ComponentRef Id="UninstallDisplayIcon" />');
 
 testIncludesNot('RegistryRunKey component', '<Component Id="RegistryRunKey"');
 testIncludesNot('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
@@ -491,15 +491,7 @@ describe('auto-updater', () => {
   regexTestIncludes('AutoUpdater feature', /<Feature Id="AutoUpdater" Title="Auto Updater" Level="3" .*>/);
   regexTestIncludes('Squirrel executable component-ref', /<ComponentRef Id="_msq.exe_.*" \/>/ );
   testIncludes('Permission component-ref',  `<ComponentRef Id="SetFolderPermissions" />`);
-
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryInstallPath" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayName" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallPublisher" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayVersion" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallModifyString" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallString" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayIcon" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="SetUninstallDisplayVersionPermissions" />');
+  testIncludes('SetUninstallDisplayVersionPermissions component-ref', '<ComponentRef Id="SetUninstallDisplayVersionPermissions" />');
 });
 
 describe('auto-launch', () => {
@@ -522,15 +514,9 @@ describe('auto-launch', () => {
     expect(componentCount).toEqual(refCount);
   });
 
+  testIncludes('RegistryRunKey', '<RegistryKey Root="HKMU" Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" ForceCreateOnInstall="no" ForceDeleteOnUninstall="no"');
   testIncludes('RegistryRunKey component', '<Component Id="RegistryRunKey"');
   testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryInstallPath" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayName" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallPublisher" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayVersion" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallModifyString" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallString" />');
-  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="UninstallDisplayIcon" />');
   regexTestIncludes('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
 });
 

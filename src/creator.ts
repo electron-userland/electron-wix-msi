@@ -740,7 +740,7 @@ export class MSICreator {
         type: 'string',
         value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe',
         featureAffinity: 'autoLaunch',
-        forceDeleteOnUninstall: 'yes'
+        forceDeleteOnUninstall: 'no'
       });
     }
 
