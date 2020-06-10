@@ -100,7 +100,7 @@ describe('Electron WIX MSI', () => {
 
       entryPoints.forEach((entryPoint) => {
         it(`runs the correct binary via ${entryPoint.name}`, async () => {
-          await launch(paths.startMenuShortcut);
+          await launch(entryPoint.path);
           expect(await runs(msiOptions.exe)).ok();
           expect(await getProcessPath(msiOptions.exe)).to.be(paths.appExe);
           await kill(msiOptions.exe);

@@ -457,12 +457,12 @@ testIncludes('UninstallDisplayIcon component-ref', '<ComponentRef Id="UninstallD
 testIncludesNot('RegistryRunKey component', '<Component Id="RegistryRunKey"');
 testIncludesNot('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
 regexTestIncludesNot('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
-regexTestIncludesNot('AutoUpdater feature', /<Feature Id="AutoUpdater" Title="Auto Updater" Level="3" .*>/);
+regexTestIncludesNot('AutoUpdate feature', /<Feature Id="AutoUpdate" Title="Auto Update" Level="3" .*>/);
 regexTestIncludesNot('Squirrel executable component-ref', /<ComponentRef Id="_msq.exe_.*" \/>/ );
 testIncludesNot('Permission component-ref',  `<ComponentRef Id="SetFolderPermissions" />`);
 testIncludesNot('RegistryRunKey component-ref', '<ComponentRef Id="SetUninstallDisplayVersionPermissions" />');
 
-describe('auto-updater', () => {
+describe('auto-update', () => {
   test('MSICreator includes Auto-Updater feature', async () => {
     const msiCreator = new MSICreator({ ...defaultOptions, features: {autoUpdate: true, autoLaunch: false }});
     const { wxsFile } = await msiCreator.create();
@@ -488,7 +488,7 @@ describe('auto-updater', () => {
   testIncludes('PermissionEx call', '<util:PermissionEx User="[UPDATERUSERGROUP]" GenericAll="yes" />');
   testIncludes('Updater user group property', '<Property Id="UPDATERUSERGROUP" Value="Users" />');
 
-  regexTestIncludes('AutoUpdater feature', /<Feature Id="AutoUpdater" Title="Auto Updater" Level="3" .*>/);
+  regexTestIncludes('AutoUpdate feature', /<Feature Id="AutoUpdate" Title="Auto Update" Level="3" .*>/);
   regexTestIncludes('Squirrel executable component-ref', /<ComponentRef Id="_msq.exe_.*" \/>/ );
   testIncludes('Permission component-ref',  `<ComponentRef Id="SetFolderPermissions" />`);
   testIncludes('SetUninstallDisplayVersionPermissions component-ref', '<ComponentRef Id="SetUninstallDisplayVersionPermissions" />');
