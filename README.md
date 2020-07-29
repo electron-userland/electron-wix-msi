@@ -202,7 +202,7 @@ default XML. The available fields on the class are:
 * `uiTemplate` (string) - Used as the master UI template.
 * `backgroundTemplate` (string) - Used as the background template.
 
-## 🆕 [End user documentation](guids/enduser.md)
+## 🆕 [End user documentation](guides/enduser.md)
 
 
 ## License
