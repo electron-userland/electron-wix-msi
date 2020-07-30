@@ -121,7 +121,7 @@ msiexec /i “<fullpath to msi>” /qb UPDATERUSERGROUP=<NTFS user group>
 msiexec /i “C:\temp\kitten.msi” ADDLOCAL=MainApplication,AutoUpdate UPDATERUSERGROUP=AuthenticatedUsers
 ```
 
-### Install Auto Update and control updates
+### Install Auto Update and Control Updates
 The Auto Updater can be enabled/disabled via a registry key. The registry value AutoUpdate is located under `HKLM\SOFTWARE\Kitten Technologies\Kitten`. This registry can be modified via GPO at any time to enable/disable the Auto Updater. Only if the key exist with a value of 1, auto-updates will be executed. 
 If the Auto Updater feature is selected for installation then the key will be set and enabled by default. However, the Auto Updater can also be installed but stay disabled. The MSI property AUTOUPDATEENABLED can set the initial value in the registry. 
 
