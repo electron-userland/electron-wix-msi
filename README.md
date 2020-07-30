@@ -35,11 +35,46 @@ it is likely already installed.
 npm i --save-dev electron-wix-msi
 ```
 
+## Whats new?
+Version 3 is a major release for this toolkit. Many internals were reworked and V3 
+delivers improvements listed below. Please look out for the **🆕 icon throughout this
+documentation for new parameter.
+
+### New install folder structure
+A new folder structure allows to update the MSI installation while your app is running
+without temporarily corrupting the installation. If files are locked during an update
+then the MSI engine schedules file operation after the next reboot. While files that are
+not locked will be overwritten immediately. That can cause unexpected behavior of your
+app. The version-based folder structure avoids these problems and leads to a more robust
+user experience.
+``` js
+C:\Program Files\
+└─ Kittens
+     └─ app-x.x.x // version of the MSI
+     └─ .installInfo // contains information about the installation
+     └─ kittens.exe // stub executable that launches the newest version
+     └─ Update.exe // optional auto updater 
+```
+### Auto launch feature
+Auto updating was a long missing feature for MSIs. No more!. The integration of special
+Squirrel.Windows version allows us to enable auto-updating. This feature is optional
+and can be enabled/disabled at package time, install time and can even be controlled 
+at run time of your App. See [end user documentation](guides/enduser.md)
+
+### Auto update feature
+Auto updating was a long missing feature for MSIs. No more! The integration of a special
+Squirrel.Windows version allows us to enable auto-updating. This feature is completely
+optional and can be enabled/disabled at package time, install time and can even be controlled 
+at run time of your App.
+
+### Desktop shortcut
+Your App will now also have a shortcut on the Desktop. 
+
 ## Usage
 
 Creating an installer is a three-step process:
 
-```js
+``` js
 import { MSICreator } from 'electron-wix-msi';
 
 // Step 1: Instantiate the MSICreator
@@ -54,7 +89,15 @@ const msiCreator = new MSICreator({
 });
 
 // Step 2: Create a .wxs template file
-await msiCreator.create();
+const supportBinaries = await msiCreator.create();
+
+// 🆕 Step 2a: optionally sign support binaries if you
+// sign you binaries as part of of your packaging script
+supportBinaries.forEach(async (binary) => {
+  // Binaries are the new stub executable and optionally
+  // the Squirrel auto updater.
+  await signFile(binary);
+});
 
 // Step 3: Compile the template to a .msi file
 await msiCreator.compile();
@@ -71,6 +114,8 @@ await msiCreator.compile();
 * `description` (string) - The app's description.
 * `version` (string) - The app's version.
 * `name` (string) - The app's name.
+* `iconPath` 🆕 (string, optional) - A path to the Apps icon used for the stub executable.
+   If not provided a lower quality version will be extracted form the `exe`
 * `manufacturer` (string) - Name of the manufacturer.
 
 * `appUserModelId` (string, optional) - String to set as `appUserModelId` on the
@@ -105,6 +150,13 @@ await msiCreator.compile();
   more information.
 * `arch` (string, optional) - Defines the architecure the MSI is build for. Values can
   be either `x86` or `x64`. Default's to `x86` if left undefined.
+* `features` 🆕 (Feature , optional) - Enables/disables features that will be built-in 
+  to the MSI `autoUpdate: boolean` and `autoLaunch: boolean`. These features will be
+  then selectable by the end-user during the installation.
+  * `autoUpdate` (boolean) - indicates whether the auto-updater is available as an
+    install feature
+  * `autoLaunch` (boolean) - indicates whether the launch on login is available as an
+    install feature
 
 ##### UI Configuration (Optional)
 
@@ -150,88 +202,8 @@ default XML. The available fields on the class are:
 * `uiTemplate` (string) - Used as the master UI template.
 * `backgroundTemplate` (string) - Used as the background template.
 
-## Should I use this?
+## 🆕 [End user documentation](guides/enduser.md)
 
-Let's start with what's bad about this: Electron is based on Chromium, and as
-such, inherintly dependent upon frequent updates. Whenever a new version of
-Electron comes out, you should release a new version of your app. The default
-installer for Windows is based on
-[Squirrel](https://github.com/Squirrel/Squirrel.Windows), which comes with
-support for automatic updates. An app that updates itself is fantastic for most
-consumers. If you are not sure if you need a traditional MSI, chances are that
-you don't.
-
-> "Young man, creating an installer and dying is easy. Updating it and living is
-> harder."
->
-> -- Windows George Washington, 1776
-
-If you are however developing enterprise software, you might find that IT
-departments don't want automatically updating software. They want controlled
-rollouts and detailed control over the installation. This is true for
-universities, hospitals, the military, and many other organizations that have a
-managed IT infrastructure. Their administrators will expect a "classic"
-installer - the same way they would install Microsoft Office, Node.js,
-Photoshop, or any other software. If you see your app being used in those
-environments, you should push the self-updating package, but have a traditional
-MSI in your pocket. Bear in mind however that you will need to find a way to get
-updates to your users without relying on Electron's auto updater.
-
-## MSI Administration
-The `msi` packages created with this module allow for a wide range of command line parameters. The installer is a "Windows Installer", meaning that the actual installer's logic is part of Windows itself. It supports the following command-line parameters:
-
-#### Install Options
-`</uninstall | /x>` Uninstalls the product
-
-#### Display Options
-- `/quiet` Quiet mode, no user interaction
-- `/passive` Unattended mode - progress bar only
-- `/q[n|b|r|f]` Sets user interface level
-  - n No UI
-  - b Basic UI
-  - r Reduced UI
-  - f Full UI (default)
-`/help` Help information
-
-#### Restart Options
-- `/norestart` Do not restart after the installation is complete
-- `/promptrestart` Prompts the user for restart if necessary
-- `/forcerestart` Always restart the computer after installation
-
-#### Logging Options
-- `/l[i|w|e|a|r|u|c|m|o|p|v|x|+|!|*] <LogFile>`
-  - `i` Status messages
-  - `w` Nonfatal warnings
-  - `e` All error messages
-  - `a` Start up of actions
-  - `r` Action-specific records
-  - `u` User requests
-  - `c` Initial UI parameters
-  - `m` Out-of-memory or fatal exit information
-  - `o` Out-of-disk-space messages
-  - `p` Terminal properties
-  - `v` Verbose output
-  - `x` Extra debugging information
-  - `+` Append to existing log file
-  - `!` Flush each line to the log
-  - `*` Log all information, except for v and x options
-- `/log <LogFile>` Equivalent of /l* <LogFile>
-
-#### Update Options
-- `/update <Update1.msp>[;Update2.msp]` Applies update(s)
-
-#### Repair Options
-- `/f[p|e|c|m|s|o|d|a|u|v]` Repairs a product
-  - `p` only if file is missing
-  - `o` if file is missing or an older version is installed (default)
-  - `e` if file is missing or an equal or older version is installed
-  - `d` if file is missing or a different version is installed
-  - `c` if file is missing or checksum does not match the calculated value
-  - `a` forces all files to be reinstalled
-  - `u` all required user-specific registry entries (default)
-  - `m` all required computer-specific registry entries (default)
-  - `s` all existing shortcuts (default)
-  - `v` runs from source and recaches local package
 
 ## License
 
