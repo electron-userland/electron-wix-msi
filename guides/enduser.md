@@ -108,7 +108,7 @@ msiexec /i “C:\temp\kitten.msi” APPLICATIONROOTDIRECTORY =”C:\ProgramData\
 ```
 
 
-## Controlling the Auto Update feature via command line
+## Controlling the Auto Update Feature via Command Line
 
 ### Set NTFS user group
 In order to make auto-updating work without prompting for Administrator access, the NTFS access rights for the install folder and Uninstall registry key is modified to allow normal users to write data. The UPDATERUSERGROUP property allows to set the user group that gets write access. Its default value is Users.  This property is only effective if the Auto Updater feature is installed.
