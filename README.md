@@ -62,7 +62,7 @@ and can be enabled/disabled at package time, install time and can even be contro
 at run time of your App. See [end user documentation](guides/enduser.md)
 
 ### Auto update feature
-Auto updating was a long missing feature for MSIs. No more!. The integration of special
+Auto updating was a long missing feature for MSIs. No more! The integration of a special
 Squirrel.Windows version allows us to enable auto-updating. This feature is completely
 and can be enabled/disabled at package time, install time and can even bve controlled 
 at run time of your App.
