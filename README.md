@@ -41,7 +41,7 @@ delivers improvements listed below. Please look out for the **🆕 icon througho
 documentation for new parameter.
 
 ### New install folder structure
-A new folder structure allows to update the MSI installation while your App is running
+A new folder structure allows to update the MSI installation while your app is running
 without temporarily corrupting the installation. If files are locked during an update
 then the MSI engine schedules file operation after the next reboot. While files that are
 not locked will be overwritten immediately. That can cause unexpected behavior of your
