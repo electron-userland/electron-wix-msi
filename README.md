@@ -45,7 +45,7 @@ A new folder structure allows to update the MSI installation while your app is r
 without temporarily corrupting the installation. If files are locked during an update
 then the MSI engine schedules file operation after the next reboot. While files that are
 not locked will be overwritten immediately. That can cause unexpected behavior of your
-App. The version based folder structure avoids these problems and leads to a more robust
+app. The version-based folder structure avoids these problems and leads to a more robust
 user experience.
 ``` js
 C:\Program Files\
