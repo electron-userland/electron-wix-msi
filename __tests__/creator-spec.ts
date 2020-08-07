@@ -4,7 +4,12 @@ import * as mockFs from 'mock-fs';
 import * as os from 'os';
 import * as path from 'path';
 
+jest.mock('../src/utils/rc-edit', () => ({
+  createStubExe: jest.fn()
+}));
+
 import { MSICreator, UIOptions } from '../src/creator';
+import { createStubExe } from '../src/utils/rc-edit';
 import { getMockFileSystem, numberOfFiles, root } from './mocks/mock-fs';
 import { MockSpawn } from './mocks/mock-spawn';
 
@@ -15,9 +20,14 @@ const mockSpawnArgs = {
   options: {}
 };
 
+
 beforeAll(() => {
+  // console.log call needed as workaround to make jest work with mock-fs
+  console.log('');
   // Load into cache
   require('callsites');
+
+  (createStubExe as jest.Mock).mockReturnValue('C:\\Stub.exe');
 
   jest.mock('child_process', () => ({
     execSync(name: string) {
@@ -64,16 +74,45 @@ const defaultOptions = {
   outputDirectory: path.join(os.tmpdir(), 'electron-wix-msi-test')
 };
 
-const testIncludes = (title: string, ...content: Array<string>) => {
+const testIncludesBase = (title: string, expectation: boolean , ...content: Array<string>) => {
   return test(`.wxs file includes ${title}`, () => {
     if (Array.isArray(content)) {
       // We want to be able to search across line breaks and multiple spaces.
       const singleLineWxContent = wxsContent.replace(/\s\s+/g, ' ');
       content.forEach((innerContent) => {
-        expect(singleLineWxContent.includes(innerContent)).toBeTruthy();
+        expect(singleLineWxContent.includes(innerContent)).toBe(expectation);
       });
     }
   });
+};
+
+const testIncludes = (title: string, ...content: Array<string>) => {
+  return testIncludesBase(title, true,  ...content );
+};
+
+const testIncludesNot = (title: string, ...content: Array<string>) => {
+  return testIncludesBase(title, false,  ...content );
+};
+
+
+const regexTestIncludesBase = (title: string, expectation: boolean , ...content: Array<RegExp>) => {
+  return test(`.wxs file includes ${title}`, () => {
+    if (Array.isArray(content)) {
+      // We want to be able to search across line breaks and multiple spaces.
+      const singleLineWxContent = wxsContent.replace(/\s\s+/g, ' ');
+      content.forEach((innerContent) => {
+        expect(innerContent.test(singleLineWxContent)).toBe(expectation);
+      });
+    }
+  });
+};
+
+const regexTestIncludes = (title: string, ...content: Array<RegExp>) => {
+  return regexTestIncludesBase(title, true,  ...content );
+};
+
+const regexTestIncludesNot = (title: string, ...content: Array<RegExp>) => {
+  return regexTestIncludesBase(title, false,  ...content );
 };
 
 let wxsContent = '';
@@ -95,7 +134,7 @@ test('.wxs file has content', () => {
   expect(wxsContent.length).toBeGreaterThan(50);
 });
 
-testIncludes('the root element', '<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">');
+testIncludes('the root element', '<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"');
 
 testIncludes('a package element', '<Package');
 
@@ -105,10 +144,14 @@ testIncludes('an ApplicationProgramsFolder', '<Directory Id="ApplicationPrograms
 
 testIncludes('a default appUserModelId', 'Key="System.AppUserModel.ID" Value="com.squirrel.Acme.acme"');
 
+regexTestIncludes('versioned app folder', /<Directory\s*Id=".*"\s*Name="app-1\.0\.0"/);
+
+regexTestIncludes('stubbed exe', /<File\s*Name="acme\.exe"\s*Id=".*"\s*Source="C:\\Stub\.exe"/);
+
 test('.wxs file has as many components as we have files', () => {
-  // Files + Shortcut
+  // Files + 2 Shortcuts + 2 special files + 7 registry +  1 purge components
   const count = wxsContent.split('</Component>').length - 1;
-  expect(count).toEqual(numberOfFiles + 1);
+  expect(count).toEqual(numberOfFiles + 12);
 });
 
 test('MSICreator create() creates Wix file with UI properties', async () => {
@@ -346,8 +389,6 @@ test('MSICreator create() creates x86 version by default', async () => {
 
   const { wxsFile } = await msiCreator.create();
   wxsContent = await fs.readFile(wxsFile, 'utf-8');
-  console.log(wxsFile);
-  console.log(wxsContent);
   expect(wxsFile).toBeTruthy();
 });
 testIncludes('32 bit package declaration', 'Platform="x86"');
@@ -396,3 +437,96 @@ test('MSICreator create() shortcut name override', async () => {
 });
 testIncludes('Custom shortcut name', '<Shortcut Id="ApplicationStartMenuShortcut" Name="BeepBeep"');
 
+testIncludes('Single Package Authoring setting', '<Property Id="ALLUSERS" Secure="yes" Value="2" />');
+testIncludes('correct default perUser setting', '<Property Id="MSIINSTALLPERUSER" Secure="yes" Value="0" />');
+testIncludes('Install path property', '<Property Id="INSTALLPATH">');
+testIncludes('Install RegistrySearch', 'RegistrySearch Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall');
+testIncludes('RegistryInstallPath component',  '<Component Id="RegistryInstallPath"');
+testIncludes('RegistryInstallPath component-ref',  '<ComponentRef Id="RegistryInstallPath" />');
+testIncludes('PurgeOnUninstall component',  '<Component Id="PurgeOnUninstall" ');
+testIncludes('PurgeOnUninstall component-ref',  '<ComponentRef Id="PurgeOnUninstall" />');
+
+testIncludes('RegistryInstallPath component-ref', '<ComponentRef Id="RegistryInstallPath" />');
+testIncludes('UninstallDisplayName component-ref', '<ComponentRef Id="UninstallDisplayName" />');
+testIncludes('UninstallPublisher component-ref', '<ComponentRef Id="UninstallPublisher" />');
+testIncludes('UninstallDisplayVersion component-ref', '<ComponentRef Id="UninstallDisplayVersion" />');
+testIncludes('UninstallModifyString component-ref', '<ComponentRef Id="UninstallModifyString" />');
+testIncludes('UninstallString component-ref', '<ComponentRef Id="UninstallString" />');
+testIncludes('UninstallDisplayIcon component-ref', '<ComponentRef Id="UninstallDisplayIcon" />');
+
+testIncludesNot('RegistryRunKey component', '<Component Id="RegistryRunKey"');
+testIncludesNot('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
+regexTestIncludesNot('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
+regexTestIncludesNot('AutoUpdate feature', /<Feature Id="AutoUpdate" Title="Auto Update" Level="3" .*>/);
+regexTestIncludesNot('Squirrel executable component-ref', /<ComponentRef Id="_msq.exe_.*" \/>/ );
+testIncludesNot('Permission component-ref',  `<ComponentRef Id="SetFolderPermissions" />`);
+testIncludesNot('RegistryRunKey component-ref', '<ComponentRef Id="SetUninstallDisplayVersionPermissions" />');
+
+describe('auto-update', () => {
+  test('MSICreator includes Auto-Updater feature', async () => {
+    const msiCreator = new MSICreator({ ...defaultOptions, features: {autoUpdate: true, autoLaunch: false }});
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    expect(wxsFile).toBeTruthy();
+  });
+
+  test('.wxs file has as many components as we have files', () => {
+    // Files + 2 Shortcuts + 3 special files + 9 registry + 1 permission component + 1 purge components
+    const count = wxsContent.split('</Component>').length - 1;
+    expect(count).toEqual(numberOfFiles + 16);
+  });
+
+  test('.wxs file contains as many component refs as components', () => {
+    const componentCount = wxsContent.split('</Component>').length - 1;
+    const refCount = wxsContent.split('<ComponentRef').length - 1;
+    expect(componentCount).toEqual(refCount);
+  });
+
+  regexTestIncludes('Squirrel executable component', /<Component Id="_msq.exe_.*"/);
+
+  testIncludes('Permission component',  `<Component Id="SetFolderPermissions"`);
+  testIncludes('PermissionEx call', '<util:PermissionEx User="[UPDATERUSERGROUP]" GenericAll="yes" />');
+  testIncludes('Updater user group property', '<Property Id="UPDATERUSERGROUP" Value="Users" />');
+
+  regexTestIncludes('AutoUpdate feature', /<Feature Id="AutoUpdate" Title="Auto Update" Level="3" .*>/);
+  regexTestIncludes('Squirrel executable component-ref', /<ComponentRef Id="_msq.exe_.*" \/>/ );
+  testIncludes('Permission component-ref',  `<ComponentRef Id="SetFolderPermissions" />`);
+  testIncludes('SetUninstallDisplayVersionPermissions component-ref', '<ComponentRef Id="SetUninstallDisplayVersionPermissions" />');
+});
+
+describe('auto-launch', () => {
+  test('MSICreator includes Auto-Updater feature', async () => {
+    const msiCreator = new MSICreator({ ...defaultOptions, features: {autoUpdate: false, autoLaunch: true }});
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    expect(wxsFile).toBeTruthy();
+  });
+
+  test('.wxs file has as many components as we have files', () => {
+    // Files + 2 Shortcuts + 2 special files + 8 registry  + 1 purge components
+    const count = wxsContent.split('</Component>').length - 1;
+    expect(count).toEqual(numberOfFiles + 13);
+  });
+
+  test('.wxs file contains as many component refs as components', () => {
+    const componentCount = wxsContent.split('</Component>').length - 1;
+    const refCount = wxsContent.split('<ComponentRef').length - 1;
+    expect(componentCount).toEqual(refCount);
+  });
+
+  testIncludes('RegistryRunKey', '<RegistryKey Root="HKMU" Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" ForceCreateOnInstall="no" ForceDeleteOnUninstall="no"');
+  testIncludes('RegistryRunKey component', '<Component Id="RegistryRunKey"');
+  testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
+  regexTestIncludes('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
+});
+
+describe('perUser install by default', () => {
+  test('MSICreator includes Auto-Updater feature', async () => {
+    const msiCreator = new MSICreator({ ...defaultOptions, defaultInstallMode: 'perUser' });
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    expect(wxsFile).toBeTruthy();
+  });
+
+  testIncludes('correct defautlt perUser setting', '<Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1" />');
+});

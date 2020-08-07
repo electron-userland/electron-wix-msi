@@ -1,0 +1,6 @@
+<!-- {{I}} --><Component Id="{{ComponentId}}" Guid="{{Guid}}" Win64="{{Win64YesNo}}">
+<!-- {{I}} -->  <RegistryKey Root="{{Root}}" Key="{{Key}}" ForceCreateOnInstall="{{ForceCreateOnInstall}}" ForceDeleteOnUninstall="{{ForceDeleteOnUninstall}}">
+<!-- {{I}} -->    <!-- {{Permission}} -->
+<!-- {{I}} -->    <RegistryValue Name="{{Name}}" Type="{{Type}}" Value="{{Value}}" KeyPath="yes"/>
+<!-- {{I}} -->  </RegistryKey>
+<!-- {{I}} --></Component>

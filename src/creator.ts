@@ -4,13 +4,30 @@ import * as path from 'path';
 import * as uuid from 'uuid/v4';
 import { spawnPromise } from './utils/spawn';
 
-import { Component, ComponentRef, Directory, File, FileFolderTree, StringMap } from './interfaces';
+import { Component,
+         ComponentRef,
+         featureAffinity,
+         File,
+         FileComponent,
+         FileFolderTree,
+         Registry,
+         StringMap } from './interfaces';
 import { addFilesToTree, arrayToTree } from './utils/array-to-tree';
 import { hasCandle, hasLight } from './utils/detect-wix';
+import { createStubExe } from './utils/rc-edit';
 import { replaceInString, replaceToFile } from './utils/replace';
+import { createInstallInfoFile, getWindowsCompliantVersion } from './utils/version-util';
 import { getDirectoryStructure } from './utils/walker';
 
-const getTemplate = (name: string) => fs.readFileSync(path.join(__dirname, `../static/${name}.xml`), 'utf-8');
+const getTemplate = (name: string, trimTrailingNewLine: boolean = false) => {
+  const content = fs.readFileSync(path.join(__dirname, `../static/${name}.xml`), 'utf-8');
+  if (trimTrailingNewLine) {
+    return content.replace(/[\r\n]+$/g, '');
+  } else {
+    return content;
+  }
+};
+
 const ROOTDIR_NAME = 'APPLICATIONROOTDIRECTORY';
 const debug = require('debug')('electron-wix-msi');
 
@@ -19,6 +36,7 @@ export interface MSICreatorOptions {
   appUserModelId?: string;
   description: string;
   exe: string;
+  appIconPath?: string;
   extensions?: Array<string>;
   cultures?: string;
   language?: number;
@@ -36,6 +54,8 @@ export interface MSICreatorOptions {
   certificateFile?: string;
   certificatePassword?: string;
   arch?: 'x64' | 'ia64'| 'x86';
+  features?: Features | false;
+  defaultInstallMode?: 'perUser' | 'perMachine';
 }
 
 export interface UIOptions {
@@ -53,15 +73,24 @@ export interface UIImages {
   upIcon?: string;            // WixUIUpIco
 }
 
+export interface Features {
+  autoUpdate: boolean;
+  autoLaunch: boolean;
+}
+
 export class MSICreator {
   // Default Templates
-  public componentTemplate = getTemplate('component');
+  public fileComponentTemplate = getTemplate('file-component');
+  public registryComponentTemplate = getTemplate('registry-component');
+  public permissionTemplate = getTemplate('permission');
   public componentRefTemplate = getTemplate('component-ref');
   public directoryTemplate = getTemplate('directory');
   public wixTemplate = getTemplate('wix');
-  public uiTemplate = getTemplate('ui');
-  public uiDirTemplate = getTemplate('ui-choose-dir');
-  public propertyTemplate = getTemplate('property');
+  public uiTemplate = getTemplate('ui', true);
+  public wixVariableTemplate = getTemplate('wix-variable', true);
+  public updaterTemplate = getTemplate('updater-feature', true);
+  public updaterPermissions = getTemplate('updater-permissions');
+  public autoLaunchTemplate = getTemplate('auto-launch-feature', true);
 
   // State, overwritable beteween steps
   public wxsFile: string = '';
@@ -71,6 +100,7 @@ export class MSICreator {
   public appUserModelId: string;
   public description: string;
   public exe: string;
+  public iconPath?: string;
   public extensions: Array<string>;
   public cultures?: string;
   public language: number;
@@ -82,16 +112,23 @@ export class MSICreator {
   public shortcutFolderName: string;
   public shortcutName: string;
   public upgradeCode: string;
-  public version: string;
+  public windowsCompliantVersion: string;
+  public semanticVersion: string;
   public certificateFile?: string;
   public certificatePassword?: string;
   public signWithParams?: string;
   public arch: 'x64' | 'ia64'| 'x86' = 'x86';
+  public autoUpdate: boolean;
+  public autoLaunch: boolean;
+  public defaultInstallMode: 'perUser' | 'perMachine';
+  public productCode: string;
 
   public ui: UIOptions | boolean;
 
   private files: Array<string> = [];
+  private specialFiles: Array<File> = [];
   private directories: Array<string> = [];
+  private registry: Array<Registry> = [];
   private tree: FileFolderTree | undefined;
   private components: Array<Component> = [];
 
@@ -101,6 +138,7 @@ export class MSICreator {
     this.certificatePassword = options.certificatePassword;
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, '');
+    this.iconPath = options.appIconPath;
     this.extensions = options.extensions || [];
     this.cultures = options.cultures;
     this.language = options.language || 1033;
@@ -113,13 +151,22 @@ export class MSICreator {
     this.shortcutName = options.shortcutName || options.name;
     this.signWithParams = options.signWithParams;
     this.upgradeCode = options.upgradeCode || uuid();
-    this.version = options.version;
+    this.semanticVersion = options.version;
+    this.windowsCompliantVersion = getWindowsCompliantVersion(options.version);
     this.arch = options.arch || 'x86';
+    this.defaultInstallMode = options.defaultInstallMode || 'perMachine';
+    this.productCode = uuid().toUpperCase();
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`;
 
     this.ui = options.ui !== undefined ? options.ui : false;
+    this.autoUpdate = false;
+    this.autoLaunch = false;
+    if (typeof options.features === 'object' && options.features !== null) {
+      this.autoUpdate = options.features.autoUpdate;
+      this.autoLaunch = options.features.autoLaunch;
+    }
   }
 
   /**
@@ -129,17 +176,22 @@ export class MSICreator {
    *
    * @returns {Promise<{ wxsFile: string, wxsContent: string }>}
    */
-  public async create(): Promise<{ wxsFile: string, wxsContent: string }> {
+  public async create(): Promise<{ wxsFile: string, wxsContent: string, supportBinaries: Array<string> }> {
     const { files, directories } = await getDirectoryStructure(this.appDirectory);
+    const registry = this.getRegistryKeys();
+    const specialFiles = await this.getSpecialFiles();
 
     this.files = files;
+    this.specialFiles = specialFiles;
     this.directories = directories;
-    this.tree = this.getTree();
+    this.registry = registry;
+    this.tree = await this.getTree();
 
     const { wxsContent, wxsFile } = await this.createWxs();
     this.wxsFile = wxsFile;
 
-    return { wxsContent, wxsFile };
+    const supportBinaries = this.specialFiles.filter((f) => f.path.endsWith('.exe')).map((f) => f.path);
+    return { wxsContent, wxsFile, supportBinaries };
   }
 
   /**
@@ -178,20 +230,28 @@ export class MSICreator {
    * @returns {Promise<{ wxsFile: string, wxsContent: string }>}
    */
   private async createWxs(): Promise<{ wxsFile: string, wxsContent: string }> {
-    if (!this.tree) {
-      throw new Error('Tree does not exist');
-    }
-
     const target = path.join(this.outputDirectory, `${this.exe}.wxs`);
     const base = path.basename(this.appDirectory);
     const directories = await this.getDirectoryForTree(
-      this.tree, base, 8, ROOTDIR_NAME, this.programFilesFolderName);
-    const componentRefs = await this.getComponentRefs();
+      this.tree!, base, 8, this.programFilesFolderName, ROOTDIR_NAME);
+    const componentRefs = await this.getFeatureComponentRefs('main');
+    const updaterComponentRefs = await this.getFeatureComponentRefs('autoUpdate');
+    const autoLaunchComponentRefs = await this.getFeatureComponentRefs('autoLaunch');
+    let enableChooseDirectory = false;
+    if (typeof this.ui === 'object' && this.ui !== 'null') {
+      const { chooseDirectory } = this.ui;
+      enableChooseDirectory = chooseDirectory || false;
+    }
 
     const scaffoldReplacements = {
       '<!-- {{ComponentRefs}} -->': componentRefs.map(({ xml }) => xml).join('\n'),
       '<!-- {{Directories}} -->': directories,
-      '<!-- {{UI}} -->': this.getUI()
+      '<!-- {{UI}} -->': this.getUI(),
+      '<!-- {{AutoUpdatePermissions}} -->': this.autoUpdate ? this.updaterPermissions : '{{remove newline}}',
+      '<!-- {{AutoUpdateFeature}} -->': this.autoUpdate ? this.updaterTemplate : '{{remove newline}}',
+      '<!-- {{AutoLaunchFeature}} -->': this.autoLaunch ? this.autoLaunchTemplate : '{{remove newline}}',
+      '<!-- {{UpdaterComponentRefs}} -->': updaterComponentRefs.map(({ xml }) => xml).join('\n'),
+      '<!-- {{AutoLaunchComponentRefs}} -->': autoLaunchComponentRefs.map(({ xml }) => xml).join('\n'),
     };
 
     const replacements = {
@@ -206,12 +266,18 @@ export class MSICreator {
       '{{ShortcutFolderName}}': this.shortcutFolderName,
       '{{ShortcutName}}': this.shortcutName,
       '{{UpgradeCode}}': this.upgradeCode,
-      '{{Version}}': this.version,
+      '{{Version}}': this.windowsCompliantVersion,
+      '{{SemanticVersion}}': this.semanticVersion,
       '{{Platform}}': this.arch,
       '{{ProgramFilesFolder}}': this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
       '{{ProcessorArchitecture}}' : this.arch,
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
-      '{{DesktopShortcutGuid}}': uuid()
+      '{{DesktopShortcutGuid}}': uuid(),
+      '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
+      '{{InstallPerUser}}': this.defaultInstallMode === 'perUser' ? '1' : '0',
+      '{{ProductCode}}': this.productCode,
+      '{{RandomGuid}}': uuid().toString(),
+      '\r\n.*{{remove newline}}': ''
     };
 
     const completeTemplate = replaceInString(this.wixTemplate, scaffoldReplacements);
@@ -256,6 +322,10 @@ export class MSICreator {
 
     if (this.ui && !this.extensions.find((e) => e === 'WixUIExtension')) {
       this.extensions.push('WixUIExtension');
+    }
+
+    if (!this.extensions.find((e) => e === 'WixUtilExtension')) {
+      this.extensions.push('WixUtilExtension');
     }
 
     const preArgs = flatMap(this.extensions.map((e) => (['-ext', e])));
@@ -322,14 +392,11 @@ export class MSICreator {
     }
 
     if (typeof this.ui === 'object' && this.ui !== 'null') {
-      const { images, template, chooseDirectory } = this.ui;
-      const propertiesXml = this.getUIProperties(this.ui);
-      const uiTemplate = template || (chooseDirectory
-        ? this.uiDirTemplate
-        : this.uiTemplate);
-
+      const { template } = this.ui;
+      const variablesXml = this.getUIVariables(this.ui);
+      const uiTemplate = template || this.uiTemplate;
       xml = replaceInString(uiTemplate, {
-        '<!-- {{Properties}} -->': propertiesXml
+        '<!-- {{WixVariables}} -->': variablesXml.length > 0 ? variablesXml : '{{remove newline}}'
       });
     }
 
@@ -337,13 +404,13 @@ export class MSICreator {
   }
 
   /**
-   * Returns Wix UI properties
+   * Returns Wix UI variables
    *
    * @returns {string}
    */
-  private getUIProperties(ui: UIOptions): string {
+  private getUIVariables(ui: UIOptions): string {
     const images = ui.images || {};
-    const propertyMap: StringMap<string> = {
+    const variableMap: StringMap<string> = {
       background: 'WixUIDialogBmp',
       banner: 'WixUIBannerBmp',
       exclamationIcon: 'WixUIExclamationIco',
@@ -354,9 +421,9 @@ export class MSICreator {
 
     return Object.keys(images)
       .map((key) => {
-        return propertyMap[key]
-          ? replaceInString(this.propertyTemplate, {
-              '{{Key}}': propertyMap[key],
+        return variableMap[key]
+          ? replaceInString(this.wixVariableTemplate, {
+              '{{Key}}': variableMap[key],
               '{{Value}}': (images as any)[key]
             })
           : '';
@@ -376,32 +443,44 @@ export class MSICreator {
   private getDirectoryForTree(tree: FileFolderTree,
                               treePath: string,
                               indent: number,
-                              id?: string,
-                              name?: string): string {
+                              name: string,
+                              id?: string): string {
     const childDirectories = Object.keys(tree)
       .filter((k) => !k.startsWith('__ELECTRON_WIX_MSI'))
       .map((k) => {
         return this.getDirectoryForTree(
           tree[k] as FileFolderTree,
           (tree[k] as FileFolderTree).__ELECTRON_WIX_MSI_PATH__,
-          indent + 2
+          indent + 2,
+          (tree[k] as FileFolderTree).__ELECTRON_WIX_MSI_DIR_NAME__,
         );
       });
     const childFiles = tree.__ELECTRON_WIX_MSI_FILES__
       .map((file) => {
-        const component = this.getComponent(file, indent + 2);
+        const component = this.getFileComponent(file, indent + 2);
         this.components.push(component);
         return component.xml;
       });
 
-    const children: string = [childDirectories.join('\n'), childFiles.join('\n')].join('');
+    const childRegistry = tree.__ELECTRON_WIX_MSI_REGISTRY__
+    .map((registry) => {
+      const component = this.getRegistryComponent(registry, indent + 2);
+      this.components.push(component);
+      return component.xml;
+    });
 
-    return replaceInString(this.directoryTemplate, {
+    const children: string = [childDirectories.join('\n'),
+      childFiles.join('\n'),
+      childRegistry.length > 0 ? '\n' : '',
+      childRegistry.join('\n')].join('');
+
+    const directoryXml = replaceInString(this.directoryTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
       '{{DirectoryId}}': id || this.getComponentId(treePath),
-      '{{DirectoryName}}': name || path.basename(treePath),
+      '{{DirectoryName}}': name,
       '<!-- {{Children}} -->': children
     });
+    return `${directoryXml}${childDirectories.length > 0 && !id ? '\n' : ''}`;
   }
 
   /**
@@ -409,27 +488,34 @@ export class MSICreator {
    *
    * @returns {FileFolderTree}
    */
-  private getTree(): FileFolderTree {
+  private async getTree(): Promise<FileFolderTree> {
     const root = this.appDirectory;
-    const folderTree = arrayToTree(this.directories, root);
-    const fileFolderTree = addFilesToTree(folderTree, this.files, root);
+
+    const folderTree = arrayToTree(this.directories, root, this.semanticVersion);
+    const fileFolderTree = addFilesToTree(folderTree,
+                                          this.files,
+                                          this.specialFiles,
+                                          this.registry,
+                                          this.semanticVersion);
 
     return fileFolderTree;
   }
 
   /**
-   * Creates Wix <ComponentRefs> for all components.
+   * Creates Wix <ComponentRefs> components by feature.
    *
    * @returns {<Array<ComponentRef>}
    */
-  private getComponentRefs(): Array<ComponentRef> {
-    return this.components.map(({ componentId }) => {
-      const xml = replaceInString(this.componentRefTemplate, {
-        '<!-- {{I}} -->': '      ',
-        '{{ComponentId}}': componentId
-      });
+  private getFeatureComponentRefs(feature: featureAffinity): Array<ComponentRef> {
+    return this.components
+      .filter((c) => c.featureAffinity === feature)
+      .map(({ componentId }) => {
+        const xml = replaceInString(this.componentRefTemplate, {
+          '<!-- {{I}} -->': '        ',
+          '{{ComponentId}}': componentId
+        });
 
-      return { componentId, xml };
+        return { componentId, xml };
     });
   }
 
@@ -437,12 +523,12 @@ export class MSICreator {
    * Creates Wix <Components> for all files.
    *
    * @param {File}
-   * @returns {Component}
+   * @returns {RegistryComponent}
    */
-  private getComponent(file: File, indent: number): Component {
+  private getFileComponent(file: File, indent: number): FileComponent {
     const guid = uuid();
     const componentId = this.getComponentId(file.path);
-    const xml = replaceInString(this.componentTemplate, {
+    const xml = replaceInString(this.fileComponentTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
       '{{ComponentId}}': componentId,
       '{{FileId}}': componentId,
@@ -451,7 +537,35 @@ export class MSICreator {
       '{{SourcePath}}': file.path
     });
 
-    return { guid, componentId, xml, file };
+    return { guid, componentId, xml, file, featureAffinity: file.featureAffinity || 'main' };
+  }
+
+  /**
+   * Creates Wix <Components> for all registry values.
+   *
+   * @param {File}
+   * @returns {RegistryComponent}
+   */
+  private getRegistryComponent(registry: Registry, indent: number): Component {
+    const guid = uuid();
+    const permissionXml = registry.permission ? replaceInString(this.permissionTemplate, {
+      '{{User}}': registry.permission.user,
+      '{{GenericAll}}': registry.permission.genericAll,
+    }) : '{{remove newline}}';
+    const xml = replaceInString(this.registryComponentTemplate, {
+      '<!-- {{I}} -->': padStart('', indent),
+      '{{ComponentId}}': registry.id,
+      '{{Guid}}': guid,
+      '{{Name}}': registry.name,
+      '{{Root}}': registry.root,
+      '{{Key}}': registry.key,
+      '{{Type}}': registry.type,
+      '{{Value}}': registry.value,
+      '{{ForceCreateOnInstall}}': registry.forceCreateOnInstall || 'no',
+      '{{ForceDeleteOnUninstall}}': registry.forceDeleteOnUninstall || 'no',
+      '<!-- {{Permission}} -->': permissionXml
+    });
+    return { guid, componentId: registry.id, xml, featureAffinity: registry.featureAffinity || 'main' };
   }
 
   /**
@@ -470,5 +584,166 @@ export class MSICreator {
     const uniqueId = `_${pathPart}_${uuid()}`;
 
     return uniqueId.replace(/[^A-Za-z0-9_\.]/g, '_');
+  }
+
+  private async getSpecialFiles(): Promise<Array<File>> {
+    const specialFiles = new Array<File>();
+
+    const stubExe = await createStubExe(this.appDirectory,
+      this.exe,
+      this.shortName,
+      this.manufacturer,
+      this.description,
+      this.windowsCompliantVersion,
+      this.iconPath);
+
+    const installInfoFile = createInstallInfoFile(this.manufacturer,
+                                                  this.shortName,
+                                                  this.productCode,
+                                                  this.semanticVersion,
+                                                  this.arch);
+
+    // inject a stub executable into he root directory since the actual
+    // exe has been placed in a versioned sub-folder.
+    specialFiles.push({ name: `${this.exe}.exe`, path:  stubExe});
+
+    // injects an information file that helps the installed app to verify info about the installation
+    specialFiles.push({ name: `.installInfo.json`, path: installInfoFile });
+
+    if (this.autoUpdate) {
+      // inject the Squirrel updater into the root directory
+      specialFiles.push({
+        name: `Update.exe`,
+        path:  path.join(__dirname, '../vendor/msq.exe'),
+        featureAffinity: 'autoUpdate'
+      });
+    }
+
+    return specialFiles;
+  }
+
+  private getRegistryKeys(): Array<Registry> {
+    const registry = new Array<Registry>();
+    const uninstallKey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msq';
+    const productRegKey = 'SOFTWARE\\{{Manufacturer}}\\{{ApplicationShortName}}';
+
+    // On install we need to keep track of our install folder.
+    // We then can utilize that registry value to purge our install folder on uninstall.
+    registry.push({
+      id: 'RegistryInstallPath',
+      root: 'HKMU',
+      name: 'InstallPath',
+      key: uninstallKey,
+      type: 'string',
+      value: '[APPLICATIONROOTDIRECTORY]',
+      forceDeleteOnUninstall: 'yes'
+    });
+
+    // The following keys are for our uninstall entry because we hiding the original one.
+    // This allows us to set permissions in case the auto-updater is installed.
+    registry.push({
+      id: 'UninstallDisplayName',
+      root: 'HKMU',
+      name: 'DisplayName',
+      key: uninstallKey,
+      type: 'string',
+      value: '[VisibleProductName]',
+      forceDeleteOnUninstall: 'yes'
+    });
+
+    registry.push({
+      id: 'UninstallPublisher',
+      root: 'HKMU',
+      name: 'Publisher',
+      key: uninstallKey,
+      type: 'string',
+      value: '{{Manufacturer}}',
+      forceDeleteOnUninstall: 'yes'
+    });
+
+    registry.push({
+      id: 'UninstallDisplayVersion',
+      root: 'HKMU',
+      name: 'DisplayVersion',
+      key: uninstallKey,
+      type: 'string',
+      value: '{{SemanticVersion}}',
+      forceDeleteOnUninstall: 'yes'
+    });
+
+    registry.push({
+      id: 'UninstallModifyString',
+      root: 'HKMU',
+      name: 'ModifyPath',
+      key: uninstallKey,
+      type: 'expandable',
+      value: 'MsiExec.exe /I {{{ProductCode}}}',
+      forceDeleteOnUninstall: 'yes'
+    });
+
+    registry.push({
+      id: 'UninstallString',
+      root: 'HKMU',
+      name: 'UninstallString',
+      key: uninstallKey,
+      type: 'expandable',
+      value: 'MsiExec.exe /X {{{ProductCode}}}',
+      forceDeleteOnUninstall: 'yes'
+    });
+
+    registry.push({
+      id: 'UninstallDisplayIcon',
+      root: 'HKMU',
+      name: 'DisplayIcon',
+      key: uninstallKey,
+      type: 'expandable',
+      value: this.arch === 'x86' ? '[SystemFolder]msiexec.exe' : '[System64Folder]msiexec.exe',
+      forceDeleteOnUninstall: 'yes'
+    });
+
+    if (this.autoUpdate) {
+      // Yes, we putting the version string reg key in again. But this time we get
+      // ourselves write access for the auto updater user group.
+      registry.push({
+        id: 'SetUninstallDisplayVersionPermissions',
+        root: 'HKMU',
+        name: 'DisplayVersion',
+        key: uninstallKey,
+        type: 'string',
+        value: '{{SemanticVersion}}',
+        featureAffinity: 'autoUpdate',
+        permission: {
+          user: '[UPDATERUSERGROUP]',
+          genericAll: 'yes'
+        },
+        forceCreateOnInstall: 'yes',
+      });
+
+      registry.push({
+        id: 'AutoUpdateEnabled',
+        root: 'HKMU',
+        name: 'AutoUpdate',
+        key: productRegKey,
+        type: 'integer',
+        value: '[AUTOUPDATEENABLED]',
+        featureAffinity: 'autoUpdate',
+        forceDeleteOnUninstall: 'yes'
+      });
+    }
+
+    if (this.autoLaunch) {
+      registry.push({
+        id: 'RegistryRunKey',
+        root: 'HKMU',
+        name: '{{AppUserModelId}}',
+        key: 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',
+        type: 'string',
+        value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe',
+        featureAffinity: 'autoLaunch',
+        forceDeleteOnUninstall: 'no'
+      });
+    }
+
+    return registry;
   }
 }

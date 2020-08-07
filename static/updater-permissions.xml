@@ -1,0 +1,7 @@
+    <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
+      <Component Id="SetFolderPermissions" Guid="4561fc46-e52b-4afb-a302-06632a7d1ed6" Win64="{{Win64YesNo}}">
+        <CreateFolder>
+          <util:PermissionEx User="[UPDATERUSERGROUP]" GenericAll="yes" />
+        </CreateFolder>
+      </Component>
+    </DirectoryRef>

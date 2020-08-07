@@ -3,23 +3,34 @@ import * as path from 'path';
 
 export const drive = process.platform === 'win32' ? 'C:' : '/';
 export const root = path.join(drive, 'Users', 'tester', 'Code', 'app');
-export const numberOfFiles = 15;
+export const tmp = path.join(drive, 'tmp');
+export const numberOfFiles = 14;
 
 const staticDir = path.join(__dirname, '../../static');
 const staticContent: Record<string, Record<string, any>> = {};
 staticContent[staticDir] = {};
+
+const vendorDir = path.join(__dirname, '../../vendor');
+const vendorContent: Record<string, Record<string, any>> = {};
+vendorContent[vendorDir] = {};
 
 fs.readdirSync(staticDir)
   .forEach((file) => {
     staticContent[staticDir][file] = fs.readFileSync(path.join(staticDir, file), 'utf-8');
   });
 
+fs.readdirSync(vendorDir)
+  .forEach((file) => {
+    vendorContent[vendorDir][file] = '';
+  });
+
+
 export function getMockFileSystem() {
   const mockFiles = {
     'locales': {
-      'am.pak': '',
-      'en-GB.pak': '',
-      'de.pak': ''
+      'am.pak': 'hi',
+      'en-GB.pak': 'hi',
+      'de.pak': 'hi'
     },
     'resources': {
       'app.asar.unpacked': {
@@ -60,8 +71,7 @@ export function getMockFileSystem() {
 
   const system: Record<string, any> = {};
   system[root] = mockFiles;
-
+  system[tmp] = {};
   // Add files needed by this module:
-  return { ...system, ...staticContent };
+  return { ...vendorContent, ...system, ...staticContent };
 }
-

@@ -1,0 +1,3 @@
+      <Feature Id="AutoLaunch" Title="Launch On Login" Level="2" Description="Enables launch on login for all users on this machine." >
+<!-- {{AutoLaunchComponentRefs}} -->
+      </Feature>
