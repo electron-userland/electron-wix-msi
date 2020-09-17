@@ -16,6 +16,8 @@
              Compressed="yes"
              Comments="Windows Installer Package"
              Platform="{{Platform}}"/>
+    <!-- Don't allow downgrades -->>
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A later version of this product is already installed. Setup will now exit."/>
     <!-- This will hide our Uninstall entry in Apps & Features. We doing this so
     we can write our own which we can better control. -->
     <Property Id="ARPSYSTEMCOMPONENT" Value="1" />
@@ -78,17 +80,6 @@
     </SetProperty>
 
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
-
-    <!-- Handle Updates -->
-    <Upgrade Id="{{UpgradeCode}}">
-      <UpgradeVersion OnlyDetect="no" Property="PREVIOUSFOUND"
-          Minimum="0.0.0" IncludeMinimum="yes"
-          Maximum="{{Version}}" IncludeMaximum="yes" /> 
-    </Upgrade>
-
-    <InstallExecuteSequence>
-      <RemoveExistingProducts After="InstallInitialize" />
-    </InstallExecuteSequence>
 
 <!-- {{UI}} -->
 
