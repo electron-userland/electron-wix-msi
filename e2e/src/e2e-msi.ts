@@ -112,9 +112,59 @@ describe('Electron WIX MSI', () => {
       ...msiOptions,
       version: '1.2.4'
     };
+
+    const options100 = {
+      ...msiOptions,
+      version: '1.0.0'
+    };
+
     const paths124 = getInstallPaths(options124);
 
-    describe(`Updating ${getTestConfigString()}`, () =>  {
+    describe(`Downgrading ${getTestConfigString()}`, () =>  {
+      before(async () => {
+        await kill(msiOptions.exe);
+      });
+      after(async () => {
+        await kill(msiOptions.exe);
+      });
+
+      it('does not downgrade', async () => {
+        await createMsiPackage(options100);
+        try {
+          await install(msiPath);
+        } catch (_) { /* don't care */}
+        const version = getWindowsCompliantVersion(msiOptions.version);
+        expect(await checkInstall(`${msiOptions.name} (Machine)`, msiOptions.version)).ok();
+        expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`, version)).ok();
+      });
+
+      it('has all previous files in program files', () => {
+        expect(fs.pathExistsSync(paths.stubExe)).ok();
+        expectSameFolderContent(HARNESS_APP_DIR, paths.appFolder);
+      });
+
+      it('has shortcuts', () => {
+        expect(fs.pathExistsSync(paths.startMenuShortcut)).ok();
+        expect(fs.pathExistsSync(paths.desktopShortcut)).ok();
+      });
+
+      const entryPoints = [
+        { name: 'stubExe', path: paths.stubExe },
+        { name: 'start menu shortcut', path: paths.startMenuShortcut },
+        { name: 'desktop shortcut', path: paths.desktopShortcut },
+      ];
+
+      entryPoints.forEach((entryPoint) => {
+        it(`runs the correct binary via ${entryPoint.name}`, async () => {
+          await launch(entryPoint.path);
+          expect(await runs(msiOptions.exe)).ok();
+          expect(await getProcessPath(msiOptions.exe)).to.be(paths.appExe);
+          await kill(msiOptions.exe);
+         });
+      });
+    });
+
+    describe(`Upgrading ${getTestConfigString()}`, () =>  {
       before(async () => {
         await kill(msiOptions.exe);
       });

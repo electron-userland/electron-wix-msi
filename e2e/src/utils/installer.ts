@@ -45,7 +45,7 @@ export const install = async (msi: string, installLevel: 1 | 2 | 3 = 2, autoUpda
   if (updatesEnabled === undefined || updatesEnabled !== true) {
     args.push(`AUTOUPDATEENABLED=0`);
   }
-  args.push('/qb');
+  args.push('/qn');
   return spawnPromise('msiexec.exe', args);
 };
 
