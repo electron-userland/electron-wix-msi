@@ -33,7 +33,7 @@
     "uuid": "^3.3.3"
   },
   "optionalDependencies": {
-    "exe-icon-extractor": "^1.0.8"
+    "@bitdisaster/exe-icon-extractor": "^1.0.10"
   },
   "devDependencies": {
     "@types/debug": "4.1.5",
