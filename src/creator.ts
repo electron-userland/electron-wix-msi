@@ -330,7 +330,7 @@ export class MSICreator {
     }
 
     const preArgs = flatMap(this.extensions.map((e) => (['-ext', e])));
-           
+
     if (typeof this.ui === 'object' && this.ui.localizations && this.ui.localizations.length && type === 'msi') {
        this.ui.localizations.forEach((l) => preArgs.push('-loc', l));
      }
