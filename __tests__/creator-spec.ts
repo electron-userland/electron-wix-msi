@@ -284,7 +284,7 @@ test('MSICreator compile() passes cultures args to the binary', async () => {
 
 test('MSICreator compile() passes localizations args to the binary', async () => {
   const localizationFilePath = 'testDirectory/localization.wxl';
-  const ui = { localizations: [localizationFilePath] }
+  const ui = { localizations: [localizationFilePath] };
   const msiCreator = new MSICreator({ ...defaultOptions, ui });
 
   await msiCreator.create();
