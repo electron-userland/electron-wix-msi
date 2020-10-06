@@ -282,6 +282,18 @@ test('MSICreator compile() passes cultures args to the binary', async () => {
   expect(mockSpawnArgs.args).toContain(`-cultures:${cultures}`);
 });
 
+test('MSICreator compile() passes localizations args to the binary', async () => {
+  const localizationFilePath = 'testDirectory/localization.wxl';
+  const ui = { localizations: [localizationFilePath] }
+  const msiCreator = new MSICreator({ ...defaultOptions, ui });
+
+  await msiCreator.create();
+  await msiCreator.compile();
+
+  expect(mockSpawnArgs.args).toContain("-loc");
+  expect(mockSpawnArgs.args).toContain(localizationFilePath);
+});
+
 test('MSICreator compile() passes extension args to the binary', async () => {
   const extensions = ['WixUIExtension', 'WixUtilExtension'];
   const msiCreator = new MSICreator({ ...defaultOptions, extensions });
