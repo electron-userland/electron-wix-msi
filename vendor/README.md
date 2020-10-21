@@ -1,5 +1,5 @@
 ## MSQ - MSI Squirrel
-Binaries in this folder are a special version of the official Squirrel.Windows. They area modified to work seamlessly with MSI installations created by electron-wix-msi V3. MSQ stays compatible with update packages created by the official Squirrel.Windows
+Binaries in this folder are a special version of the official Squirrel.Windows. They are modified to work seamlessly with MSI installations created by electron-wix-msi V3. MSQ stays compatible with update packages created by the official Squirrel.Windows
 
 ### Binaries
 - msq.exe = modified Squirrel.Windows executable, a.k.a. Update.exe,
