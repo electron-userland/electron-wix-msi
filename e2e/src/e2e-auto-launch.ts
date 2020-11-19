@@ -9,10 +9,6 @@ import { checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershe
 import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
 import { getRegistryKeyValue } from './utils/registry';
 
-interface TestConfig {
-  arch: 'x86' | 'x64';
-}
-
 const msiPath = path.join(OUT_DIR, 'HelloWix.msi');
 const autoLaunchMsiOptions = {
   ...defaultMsiOptions,
@@ -34,18 +30,24 @@ describe('MSI auto-launch', () => {
     fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x64'}).appRootFolder, { recursive: true });
   });
 
-  const testConfigs: TestConfig[] = [
-    {arch: 'x86'},
-    {arch: 'x64'},
+  const testConfigs = [
+    { label: 'x86', config: { arch: 'x86', features: { autoUpdate: false, autoLaunch: true }}},
+    { label: 'x64', config: { arch: 'x64', features: { autoUpdate: false, autoLaunch: true }}},
+    { label: 'x64 with launch args', config: { arch: 'x64', features: {
+      autoUpdate: false, autoLaunch: {
+        enabled: true,
+        arguments: ['-arg1', '-arg2']
+      }
+    }}},
   ];
 
-  testConfigs.forEach((testConfig) => {
-    describe((`arch:${testConfig.arch}`), () => {
+  testConfigs.forEach((test) => {
+    describe((`arch:${test.label}`), () => {
       const msiOptions = {
         ...autoLaunchMsiOptions,
-        ...testConfig
+        ...test.config
       };
-      const msiPaths123beta = getInstallPaths(msiOptions);
+      const msiPaths123beta = getInstallPaths(msiOptions as any);
 
       const entryPoints = [
         { name: 'stubExe', path: msiPaths123beta.stubExe },
@@ -54,33 +56,39 @@ describe('MSI auto-launch', () => {
         { name: 'auto-launch key', path: autoLaunchRegistryKeyValue },
       ];
 
-      it(`packages (${testConfig.arch})`, async () => {
-        await createMsiPackage(msiOptions);
+      it(`packages (${test.label})`, async () => {
+        await createMsiPackage(msiOptions as any);
       });
 
-      it(`installs (${testConfig.arch})`, async () => {
+      it(`installs (${test.label})`, async () => {
         await install(msiPath, 2);
         const version = getWindowsCompliantVersion(msiOptions.version);
         expect(await checkInstall(`${msiOptions.name} (Machine)`, msiOptions.version)).ok();
         expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`, version)).ok();
       });
 
-      it(`has all files in program files (${testConfig.arch})`, () => {
+      it(`has all files in program files (${test.label})`, () => {
         expect(fs.pathExistsSync(msiPaths123beta.stubExe)).ok();
         expect(fs.pathExistsSync(msiPaths123beta.appFolder)).ok();
         expectSameFolderContent(HARNESS_APP_DIR, msiPaths123beta.appFolder);
       });
 
-      it(`has shortcuts (${testConfig.arch})`, () => {
+      it(`has shortcuts (${test.label})`, () => {
         expect(fs.pathExistsSync(msiPaths123beta.startMenuShortcut)).ok();
         expect(fs.pathExistsSync(msiPaths123beta.desktopShortcut)).ok();
       });
 
-      it(`has auto-launch registry key (${testConfig.arch})`, async () => {
+      it(`has auto-launch registry key (${test.label})`, async () => {
         autoLaunchRegistryKeyValue = await getRegistryKeyValue(msiPaths123beta.registryRunKey,
           msiPaths123beta.appUserModelId);
         entryPoints[3].path = autoLaunchRegistryKeyValue;
-        expect(autoLaunchRegistryKeyValue).to.be(msiPaths123beta.stubExe);
+        let args = '';
+        if (typeof test.config.features.autoLaunch === 'object'
+          && test.config.features.autoLaunch !== null) {
+          args = test.config.features.autoLaunch.arguments ?
+          ` ${test.config.features.autoLaunch.arguments.join(' ')}` : '';
+        }
+        expect(autoLaunchRegistryKeyValue).to.be(`"${msiPaths123beta.stubExe}"${args}`);
       });
 
       entryPoints.forEach(async (entryPoint) => {
@@ -92,7 +100,7 @@ describe('MSI auto-launch', () => {
         });
       });
 
-      it(`uninstalls (${testConfig.arch})`, async () => {
+      it(`uninstalls (${test.label})`, async () => {
         await uninstall(msiPath);
         expect(await checkInstall(`${msiOptions.name} (Machine)`)).not.ok();
         expect(await checkInstall(`${msiOptions.name} (Machine - MSI)`)).not.ok();

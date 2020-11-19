@@ -28,7 +28,7 @@ const autoLaunchMsiOptions = {
   }
 };
 
-describe('MSI perUser install', () => {
+describe.only('MSI perUser install', () => {
   before(async () => {
     if (await checkInstall(`${defaultMsiOptions.name} (Machine - MSI)`)) {
       await uninstallViaPowershell(`${defaultMsiOptions.name} (Machine - MSI)`);
@@ -90,7 +90,7 @@ describe('MSI perUser install', () => {
           it(`has auto-launch registry key (${testConfig.arch})`, async () => {
             autoLaunchRegistryKeyValue = await getRegistryKeyValue(msiPaths123beta.registryRunKey,
               msiPaths123beta.appUserModelId);
-            expect(autoLaunchRegistryKeyValue).to.be(msiPaths123beta.stubExe);
+            expect(autoLaunchRegistryKeyValue).to.be(`"${msiPaths123beta.stubExe}"`);
             entryPoints[3].path = autoLaunchRegistryKeyValue;
           });
 
