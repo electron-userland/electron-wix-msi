@@ -515,9 +515,23 @@ describe('auto-launch', () => {
   });
 
   testIncludes('RegistryRunKey', '<RegistryKey Root="HKMU" Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" ForceCreateOnInstall="no" ForceDeleteOnUninstall="no"');
+  testIncludes('RegistryRunKeyValue', '<RegistryValue Name="com.squirrel.Acme.acme" Type="string" Value="&quot;[APPLICATIONROOTDIRECTORY]acme.exe&quot;" KeyPath="yes"/>');
   testIncludes('RegistryRunKey component', '<Component Id="RegistryRunKey"');
   testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
   regexTestIncludes('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
+
+  test('MSICreator includes Auto-Updater feature with arguments', async () => {
+    const msiCreator = new MSICreator({
+      ...defaultOptions,
+      features: {autoUpdate: false, autoLaunch: {enabled: true, arguments: ['arg1', 'arg2'] } }});
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    console.log(wxsContent);
+    expect(wxsFile).toBeTruthy();
+  });
+
+  testIncludes('RegistryRunKey', '<RegistryValue Name="com.squirrel.Acme.acme" Type="string" Value="&quot;[APPLICATIONROOTDIRECTORY]acme.exe&quot; arg1 arg2" KeyPath="yes"/>');
+
 });
 
 describe('perUser install by default', () => {

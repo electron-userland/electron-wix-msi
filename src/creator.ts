@@ -73,9 +73,14 @@ export interface UIImages {
   upIcon?: string;            // WixUIUpIco
 }
 
+export interface AutoLaunchOptions {
+  enabled: boolean;
+  arguments: Array<string>;
+}
+
 export interface Features {
   autoUpdate: boolean;
-  autoLaunch: boolean;
+  autoLaunch: boolean | AutoLaunchOptions;
 }
 
 export class MSICreator {
@@ -120,6 +125,7 @@ export class MSICreator {
   public arch: 'x64' | 'ia64'| 'x86' = 'x86';
   public autoUpdate: boolean;
   public autoLaunch: boolean;
+  public autoLaunchArgs: Array<string>;
   public defaultInstallMode: 'perUser' | 'perMachine';
   public productCode: string;
 
@@ -163,9 +169,15 @@ export class MSICreator {
     this.ui = options.ui !== undefined ? options.ui : false;
     this.autoUpdate = false;
     this.autoLaunch = false;
+    this.autoLaunchArgs = [];
     if (typeof options.features === 'object' && options.features !== null) {
       this.autoUpdate = options.features.autoUpdate;
-      this.autoLaunch = options.features.autoLaunch;
+      if (typeof options.features.autoLaunch === 'object' && options.features.autoLaunch !== null) {
+        this.autoLaunch = options.features.autoLaunch.enabled;
+        this.autoLaunchArgs = options.features.autoLaunch.arguments;
+      } else {
+        this.autoLaunch = options.features.autoLaunch;
+      }
     }
   }
 
@@ -732,13 +744,16 @@ export class MSICreator {
     }
 
     if (this.autoLaunch) {
+      const args = this.autoLaunchArgs.length > 0 ?
+        ` ${this.autoLaunchArgs.join(' ')}`.replace(/"/gi, '&quot;') : '';
+
       registry.push({
         id: 'RegistryRunKey',
         root: 'HKMU',
         name: '{{AppUserModelId}}',
         key: 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',
         type: 'string',
-        value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe',
+        value: `&quot;[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe&quot;${args}`,
         featureAffinity: 'autoLaunch',
         forceDeleteOnUninstall: 'no'
       });

@@ -27,7 +27,10 @@ async function harness() {
     upgradeCode: '90E8ABD6-B284-4495-81F7-4913E25A6FA3',
     features: {
       autoUpdate: true,
-      autoLaunch: true,
+      autoLaunch: {
+        enabled: true,
+        arguments: ['arg1', 'arg2']
+      },
     },
   });
 
