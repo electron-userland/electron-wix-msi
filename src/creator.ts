@@ -44,6 +44,7 @@ export interface MSICreatorOptions {
   name: string;
   outputDirectory: string;
   programFilesFolderName?: string;
+  windowsVolumeFolder?: boolean;
   shortName?: string;
   shortcutFolderName?: string;
   shortcutName?: string;
@@ -113,6 +114,7 @@ export class MSICreator {
   public name: string;
   public outputDirectory: string;
   public programFilesFolderName: string;
+  public windowsVolumeFolder?: boolean;
   public shortName: string;
   public shortcutFolderName: string;
   public shortcutName: string;
@@ -152,6 +154,7 @@ export class MSICreator {
     this.name = options.name;
     this.outputDirectory = options.outputDirectory;
     this.programFilesFolderName = options.programFilesFolderName || options.name;
+    this.windowsVolumeFolder = options.windowsVolumeFolder;
     this.shortName = options.shortName || options.name;
     this.shortcutFolderName = options.shortcutFolderName || options.manufacturer;
     this.shortcutName = options.shortcutName || options.name;
@@ -281,7 +284,7 @@ export class MSICreator {
       '{{Version}}': this.windowsCompliantVersion,
       '{{SemanticVersion}}': this.semanticVersion,
       '{{Platform}}': this.arch,
-      '{{ProgramFilesFolder}}': this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
+      '{{ProgramFilesFolder}}': this.windowsVolumeFolder ? 'WINDOWSVOLUME' : 'ProgramFilesFolder' || this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
       '{{ProcessorArchitecture}}' : this.arch,
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
       '{{DesktopShortcutGuid}}': uuid(),

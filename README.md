@@ -130,6 +130,7 @@ await msiCreator.compile();
   Windows Start Menu. Will use the app's name field if left undefined.
 * `programFilesFolderName` (string, optional) - Name of the folder your app will
   live in. Will use the app's name if left undefined.
+  `windowsVolumeFolder:  true,` (boolean, optional) - Default installation folder to C:\.
 * `upgradeCode` (string, optional) - A unique UUID used by your app to identify
   itself. This module will generate one for you, but it is important to reuse it
   to enable conflict-free upgrades.
