@@ -164,7 +164,7 @@ export class MSICreator {
     this.productCode = uuid().toUpperCase();
 
     this.appUserModelId = options.appUserModelId
-      || `com.squirrel.${this.shortName}.${this.exe}`;
+      || `com.squirrel.${this.shortName}.${this.exe}`.toLowerCase();
 
     this.ui = options.ui !== undefined ? options.ui : false;
     this.autoUpdate = false;
@@ -289,7 +289,7 @@ export class MSICreator {
       '{{InstallPerUser}}': this.defaultInstallMode === 'perUser' ? '1' : '0',
       '{{ProductCode}}': this.productCode,
       '{{RandomGuid}}': uuid().toString(),
-      '\r\n.*{{remove newline}}': ''
+      '\r?\n.*{{remove newline}}': ''
     };
 
     const completeTemplate = replaceInString(this.wixTemplate, scaffoldReplacements);
