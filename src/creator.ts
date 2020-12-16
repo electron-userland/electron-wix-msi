@@ -114,6 +114,7 @@ export class MSICreator {
   public name: string;
   public outputDirectory: string;
   public programFilesFolderName: string;
+  public programFilesFolder: string;
   public windowsVolumeFolder?: boolean;
   public shortName: string;
   public shortcutFolderName: string;
@@ -130,7 +131,6 @@ export class MSICreator {
   public autoLaunchArgs: Array<string>;
   public defaultInstallMode: 'perUser' | 'perMachine';
   public productCode: string;
-
   public ui: UIOptions | boolean;
 
   private files: Array<string> = [];
@@ -154,6 +154,7 @@ export class MSICreator {
     this.name = options.name;
     this.outputDirectory = options.outputDirectory;
     this.programFilesFolderName = options.programFilesFolderName || options.name;
+    this.programFilesFolder = 'ProgramFilesFolder';
     this.windowsVolumeFolder = options.windowsVolumeFolder;
     this.shortName = options.shortName || options.name;
     this.shortcutFolderName = options.shortcutFolderName || options.manufacturer;
@@ -257,6 +258,11 @@ export class MSICreator {
       const { chooseDirectory } = this.ui;
       enableChooseDirectory = chooseDirectory || false;
     }
+    if (this.windowsVolumeFolder) {
+      this.programFilesFolder = 'WINDOWSVOLUME';
+    } else if (this.arch !== 'x86') {
+      this.programFilesFolder = 'ProgramFiles64Folder';
+    }
 
     const scaffoldReplacements = {
       '<!-- {{ComponentRefs}} -->': componentRefs.map(({ xml }) => xml).join('\n'),
@@ -284,8 +290,7 @@ export class MSICreator {
       '{{Version}}': this.windowsCompliantVersion,
       '{{SemanticVersion}}': this.semanticVersion,
       '{{Platform}}': this.arch,
-      '{{ProgramFilesFolder}}': this.windowsVolumeFolder ? 'WINDOWSVOLUME' : 'ProgramFilesFolder' 
-      || this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
+      '{{ProgramFilesFolder}}': this.programFilesFolder,
       '{{ProcessorArchitecture}}' : this.arch,
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
       '{{DesktopShortcutGuid}}': uuid(),
