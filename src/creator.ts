@@ -284,7 +284,8 @@ export class MSICreator {
       '{{Version}}': this.windowsCompliantVersion,
       '{{SemanticVersion}}': this.semanticVersion,
       '{{Platform}}': this.arch,
-      '{{ProgramFilesFolder}}': this.windowsVolumeFolder ? 'WINDOWSVOLUME' : 'ProgramFilesFolder' || this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
+      '{{ProgramFilesFolder}}': this.windowsVolumeFolder ? 'WINDOWSVOLUME' : 'ProgramFilesFolder' 
+      || this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
       '{{ProcessorArchitecture}}' : this.arch,
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
       '{{DesktopShortcutGuid}}': uuid(),
