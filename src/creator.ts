@@ -38,6 +38,7 @@ export interface MSICreatorOptions {
   exe: string;
   appIconPath?: string;
   extensions?: Array<string>;
+  lightSwitches?: Array<string>;
   cultures?: string;
   language?: number;
   manufacturer: string;
@@ -107,6 +108,7 @@ export class MSICreator {
   public exe: string;
   public iconPath?: string;
   public extensions: Array<string>;
+  public lightSwitches: Array<string>;
   public cultures?: string;
   public language: number;
   public manufacturer: string;
@@ -146,6 +148,7 @@ export class MSICreator {
     this.exe = options.exe.replace(/\.exe$/, '');
     this.iconPath = options.appIconPath;
     this.extensions = options.extensions || [];
+    this.lightSwitches = options.lightSwitches || [];
     this.cultures = options.cultures;
     this.language = options.language || 1033;
     this.manufacturer = options.manufacturer;
@@ -344,6 +347,9 @@ export class MSICreator {
 
     if (type === 'msi' && this.cultures) {
       preArgs.unshift(`-cultures:${this.cultures}`);
+    }
+    if (type === 'msi' && this.lightSwitches) {
+      this.lightSwitches.forEach((param) => preArgs.unshift(param));
     }
 
     const { code, stderr, stdout } = await spawnPromise(binary, [ ...preArgs, input ], {
