@@ -146,6 +146,8 @@ await msiCreator.compile();
 * `signWithParams` (string, optional) - Parameters to pass to `signtool.exe`.
   Overrides `certificateFile` and `certificatePassword`.
 * `extensions` (array, optional) - Specify WiX extensions to use e.g `['WixUtilExtension', 'C:\My WiX Extensions\FooExtension.dll']`
+* `lightSwitches` (array, optional) - Specify command line options to pass to light.exe e.g. `['-sval', '-ai']`
+  Used to activate `PropertyGroup` options as specified in the [Light Task](https://wixtoolset.org/documentation/manual/v3/msbuild/task_reference/light.html) documentation. 
 * `ui` (UIOptions, optional) - Enables configuration of the UI. See below for
   more information.
 * `arch` (string, optional) - Defines the architecture the MSI is build for. Values can
