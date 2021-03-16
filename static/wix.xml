@@ -37,12 +37,13 @@
     this upgrade. Unfortunately this causes an ICE 40 warning during linking. -->
     <Property Id="REINSTALLMODE" Value="emus" />
     <!-- Overrides the default reboot behavior if files are in use during the upgrade.
-     This way no unpxecpted reboot will happpen.-->
-    <Property Id="REBOOT" Value="ReallySuppress" />
-    <!-- A property that holds the intall path and is needed to delete all files on
-    uninstall, even if they are not wriiten as part of this MSI. The value comes from a 
-    registry we set on install.-->
-    <Property Id="INSTALLLEVEL" Value="2" />
+    By default, this will be set to "ReallySuppress" to make sure no unexpected reboot will happpen.-->
+    <Property Id="REBOOT" Value="{{RebootMode}}" />
+    <!-- Installlation level to use that determines which features are installed.
+    see guides/enduser.md to check which Install Level maps to which feature that will
+    correspondingly get installed.
+    If not set, this will default to "2" (Main Feature, Launch On Login) -->
+    <Property Id="INSTALLLEVEL" Value="{{InstallLevel}}" />
     <!-- Allows to customize the Windows user group that gets access rights on
     the install folder in cas the auto-updater is installed. User that run the App
     must be part of that user group to be able to auto-update. -->
