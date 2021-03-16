@@ -80,7 +80,8 @@ const testIncludesBase = (title: string, expectation: boolean , ...content: Arra
       // We want to be able to search across line breaks and multiple spaces.
       const singleLineWxContent = wxsContent.replace(/\s\s+/g, ' ');
       content.forEach((innerContent) => {
-        expect(singleLineWxContent.includes(innerContent)).toBe(expectation);
+        if (expectation) expect(singleLineWxContent).toContain(innerContent);
+        else expect(singleLineWxContent).not.toContain(innerContent);
       });
     }
   });
@@ -142,7 +143,7 @@ testIncludes('an APPLICATIONROOTDIRECTORY', '<Directory Id="APPLICATIONROOTDIREC
 
 testIncludes('an ApplicationProgramsFolder', '<Directory Id="ApplicationProgramsFolder"');
 
-testIncludes('a default appUserModelId', 'Key="System.AppUserModel.ID" Value="com.squirrel.Acme.acme"');
+testIncludes('a default appUserModelId', 'Key="System.AppUserModel.ID" Value="com.squirrel.acme.acme"');
 
 regexTestIncludes('versioned app folder', /<Directory\s*Id=".*"\s*Name="app-1\.0\.0"/);
 
@@ -515,7 +516,7 @@ describe('auto-launch', () => {
   });
 
   testIncludes('RegistryRunKey', '<RegistryKey Root="HKMU" Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" ForceCreateOnInstall="no" ForceDeleteOnUninstall="no"');
-  testIncludes('RegistryRunKeyValue', '<RegistryValue Name="com.squirrel.Acme.acme" Type="string" Value="&quot;[APPLICATIONROOTDIRECTORY]acme.exe&quot;" KeyPath="yes"/>');
+  testIncludes('RegistryRunKeyValue', '<RegistryValue Name="com.squirrel.acme.acme" Type="string" Value="&quot;[APPLICATIONROOTDIRECTORY]acme.exe&quot;" KeyPath="yes"/>');
   testIncludes('RegistryRunKey component', '<Component Id="RegistryRunKey"');
   testIncludes('RegistryRunKey component-ref', '<ComponentRef Id="RegistryRunKey" />');
   regexTestIncludes('AutoLaunch feature', /<Feature Id="AutoLaunch" Title="Launch On Login" Level="2" .*>/);
@@ -530,7 +531,7 @@ describe('auto-launch', () => {
     expect(wxsFile).toBeTruthy();
   });
 
-  testIncludes('RegistryRunKey', '<RegistryValue Name="com.squirrel.Acme.acme" Type="string" Value="&quot;[APPLICATIONROOTDIRECTORY]acme.exe&quot; arg1 arg2" KeyPath="yes"/>');
+  testIncludes('RegistryRunKey', '<RegistryValue Name="com.squirrel.acme.acme" Type="string" Value="&quot;[APPLICATIONROOTDIRECTORY]acme.exe&quot; arg1 arg2" KeyPath="yes"/>');
 
 });
 
