@@ -19,7 +19,7 @@ const acmeExeRegex = process.platform === 'win32' ? /C:\\tmp\\acme.*\\acme\.exe/
 const acmeFileInfo = { 'version-string':
   { CompanyName: 'acme corp',
     FileDescription: 'a test',
-    LegalCopyright: '2020@acme corp',
+    LegalCopyright: '2021@acme corp',
     ProductName: 'acme' },
   'file-version': '1.2.3',
   'product-version': '1.2.3',
@@ -51,7 +51,7 @@ test('transfers exe file info to stub exe', async () => {
     callback(null, {
       CompanyName: 'acme corp',
       FileDescription: 'a test',
-      LegalCopyright: '2020@acme corp',
+      LegalCopyright: '2021@acme corp',
       ProductName: 'acme',
       FileVersion: '1.2.3',
       ProductVersion: '1.2.3'
@@ -74,7 +74,7 @@ test('uses parameter if rcinfo fails', async () => {
   const wayneOptions = { 'version-string':
   { CompanyName: 'Wayne Enterprise',
     FileDescription: 'I am Batman',
-    LegalCopyright: '2020@Wayne Enterprise',
+    LegalCopyright: '2021@Wayne Enterprise',
     ProductName: 'bat-app' },
   'file-version': '3.3.3',
   'product-version': '3.3.3',
@@ -93,7 +93,7 @@ test('uses an explicitly provided app icon for the stub exe', async () => {
     callback(null, {
       CompanyName: 'acme corp',
       FileDescription: 'a test',
-      LegalCopyright: '2020@acme corp',
+      LegalCopyright: '2021@acme corp',
       ProductName: 'acme',
       FileVersion: '1.2.3',
       ProductVersion: '1.2.3'
@@ -115,7 +115,7 @@ test('it users no icon if extraction fails and no explicit one is provided', asy
     callback(null, {
       CompanyName: 'acme corp',
       FileDescription: 'a test',
-      LegalCopyright: '2020@acme corp',
+      LegalCopyright: '2021@acme corp',
       ProductName: 'acme',
       FileVersion: '1.2.3',
       ProductVersion: '1.2.3'
@@ -141,7 +141,7 @@ test('it users no icon if icon extractor module is not available', async () => {
     callback(null, {
       CompanyName: 'acme corp',
       FileDescription: 'a test',
-      LegalCopyright: '2020@acme corp',
+      LegalCopyright: '2021@acme corp',
       ProductName: 'acme',
       FileVersion: '1.2.3',
       ProductVersion: '1.2.3'
