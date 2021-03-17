@@ -295,6 +295,18 @@ test('MSICreator compile() passes extension args to the binary', async () => {
   });
 });
 
+test('MSICreator compile() passes lightSwitch args to the binary', async () => {
+  const lightSwitches = ['-sval', '-cub', 'test.cub'];
+  const msiCreator = new MSICreator({ ...defaultOptions, lightSwitches });
+
+  await msiCreator.create();
+  await msiCreator.compile();
+
+  lightSwitches.forEach((comandSwitch) => {
+    expect(mockSpawnArgs.args).toContain(comandSwitch);
+  });
+});
+
 test('MSICreator compile() combines custom extensions with ui extensions', async () => {
   const extensions = ['WixNetFxExtension', 'WixUtilExtension'];
   const msiCreator = new MSICreator({ ...defaultOptions, extensions, ui: true });
