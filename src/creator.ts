@@ -56,6 +56,8 @@ export interface MSICreatorOptions {
   arch?: 'x64' | 'ia64'| 'x86';
   features?: Features | false;
   defaultInstallMode?: 'perUser' | 'perMachine';
+  rebootMode?: string;
+  installLevel?: number;
 }
 
 export interface UIOptions {
@@ -128,6 +130,8 @@ export class MSICreator {
   public autoLaunchArgs: Array<string>;
   public defaultInstallMode: 'perUser' | 'perMachine';
   public productCode: string;
+  public rebootMode: string;
+  public installLevel: number;
 
   public ui: UIOptions | boolean;
 
@@ -162,6 +166,8 @@ export class MSICreator {
     this.arch = options.arch || 'x86';
     this.defaultInstallMode = options.defaultInstallMode || 'perMachine';
     this.productCode = uuid().toUpperCase();
+    this.rebootMode = options.rebootMode || 'ReallySuppress';
+    this.installLevel = options.installLevel || 2;
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`.toLowerCase();
@@ -289,6 +295,8 @@ export class MSICreator {
       '{{InstallPerUser}}': this.defaultInstallMode === 'perUser' ? '1' : '0',
       '{{ProductCode}}': this.productCode,
       '{{RandomGuid}}': uuid().toString(),
+      '{{RebootMode}}': this.rebootMode,
+      '{{InstallLevel}}': this.installLevel.toString(10),
       '\r?\n.*{{remove newline}}': ''
     };
 
