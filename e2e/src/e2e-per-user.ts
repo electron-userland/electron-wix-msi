@@ -29,7 +29,7 @@ const autoLaunchMsiOptions = {
   }
 };
 
-describe.only('MSI perUser install', () => {
+describe('MSI perUser install', () => {
   before(async () => {
     if (await checkInstall(`${defaultMsiOptions.name} (Machine - MSI)`)) {
       await uninstallViaPowershell(`${defaultMsiOptions.name} (Machine - MSI)`);

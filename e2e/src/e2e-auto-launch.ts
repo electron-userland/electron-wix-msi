@@ -35,7 +35,8 @@ describe('MSI auto-launch', () => {
     { label: 'x86', config: { arch: 'x86', features: { autoUpdate: false, autoLaunch: true }}},
     { label: 'x64', config: { arch: 'x64', features: { autoUpdate: false, autoLaunch: true }}},
     { label: 'x64 with launch args', config: { arch: 'x64', features: {
-      autoUpdate: false, autoLaunch: {
+      autoUpdate: false,
+      autoLaunch: {
         enabled: true,
         arguments: ['-arg1', '-arg2']
       }

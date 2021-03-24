@@ -117,8 +117,9 @@ export const getInstallPaths = (options: MSICreatorOptions | SquirrelOptions,
   programFiles = installMode === 'perMachine' ? programFiles : `${process.env['LOCALAPPDATA']}\\Programs`;
   const appRootFolder = path.join(programFiles, options.name!);
   const shortName = isMSICreatorOptions(options) ? options.shortName || options.name : options.name;
-  const genericAumid = `com.squirrel.${shortName}.${options.exe!.replace(/\.exe$/, '')}`;
-  const appUserModelId = isMSICreatorOptions(options) ? options.appUserModelId || genericAumid : genericAumid;
+  const genericAumid = `com.squirrel.${shortName}.${options.exe!.replace(/\.exe$/, '')}`.toLowerCase();
+  const appUserModelId = isMSICreatorOptions(options) ? options.appUserModelId?.toLowerCase() || genericAumid 
+    : genericAumid;
   const toastActivatorClsid = isMSICreatorOptions(options) ? options.toastActivatorClsid || emptyGuid : emptyGuid;
   const registryRoot = installMode === 'perMachine' ? 'HKLM' : 'HKCU';
   const registryWow = arch === 'x86' && installMode === 'perMachine' ? 'WOW6432Node\\' : '';

@@ -98,8 +98,6 @@ describe('Electron WIX MSI', () => {
 
       it('has correct ToastActivatorCLSID', async () => {
         const clsid = await readToastActivatorCLSID(paths.startMenuShortcut);
-        console.log(clsid);
-        console.log(paths.toastActivatorClsid);
         expect(clsid).to.be(paths.toastActivatorClsid);
       });
 
