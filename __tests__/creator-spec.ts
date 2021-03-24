@@ -557,3 +557,45 @@ describe('perUser install by default', () => {
 
   testIncludes('correct defautlt perUser setting', '<Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1" />');
 });
+
+describe('shortcut properties', () => {
+  test('MSICreator includes default shortcut properties', async () => {
+    const msiCreator = new MSICreator({
+      ...defaultOptions,
+    });
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    expect(wxsFile).toBeTruthy();
+  });
+  testIncludes('a default appUserModelId', '<ShortcutProperty Key="System.AppUserModel.ID" Value="com.squirrel.Acme.acme"');
+  testIncludesNot('a ToastActivatorCLSID', '<ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID"');
+
+  test('MSICreator includes custom shortcut properties ', async () => {
+    const msiCreator = new MSICreator({
+      ...defaultOptions,
+      appUserModelId: 'com.squirrel.myapp.myapp',
+      toastActivatorClsid: 'd3519df4-76a7-412f-bd73-9d7746d1d757'
+    });
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    expect(wxsFile).toBeTruthy();
+  });
+
+  testIncludes('a default appUserModelId', '<ShortcutProperty Key="System.AppUserModel.ID" Value="com.squirrel.myapp.myapp"/>');
+  testIncludes('a ToastActivatorCLSID', '<ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{d3519df4-76a7-412f-bd73-9d7746d1d757}"/>');
+
+  test('MSICreator includes toast activator with brackets', async () => {
+    const msiCreator = new MSICreator({
+      ...defaultOptions,
+      appUserModelId: 'com.squirrel.myapp.myapp',
+      toastActivatorClsid: '{d3519df4-76a7-412f-bd73-9d7746d1d757}'
+    });
+    const { wxsFile } = await msiCreator.create();
+    wxsContent = await fs.readFile(wxsFile, 'utf-8');
+    expect(wxsFile).toBeTruthy();
+  });
+
+  testIncludes('the ToastActivatorCLSID', '<ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{d3519df4-76a7-412f-bd73-9d7746d1d757}"/>');
+});
+
+
