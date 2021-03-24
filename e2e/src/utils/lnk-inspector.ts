@@ -15,5 +15,4 @@ export const readAppUserModelId = async (lnkPath: string) => {
 export const readToastActivatorCLSID = async (lnkPath: string) => {
   const shortcut = await readShortcut(lnkPath);
   return shortcut.ToastActivatorCLSID;
- // return toastActivatorClsid !== '00000000-0000-0000-000-000000000000' ? toastActivatorClsid : undefined;
 };
