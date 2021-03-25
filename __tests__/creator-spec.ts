@@ -539,7 +539,6 @@ describe('auto-launch', () => {
       features: {autoUpdate: false, autoLaunch: {enabled: true, arguments: ['arg1', 'arg2'] } }});
     const { wxsFile } = await msiCreator.create();
     wxsContent = await fs.readFile(wxsFile, 'utf-8');
-    console.log(wxsContent);
     expect(wxsFile).toBeTruthy();
   });
 
@@ -567,7 +566,7 @@ describe('shortcut properties', () => {
     wxsContent = await fs.readFile(wxsFile, 'utf-8');
     expect(wxsFile).toBeTruthy();
   });
-  testIncludes('a default appUserModelId', '<ShortcutProperty Key="System.AppUserModel.ID" Value="com.squirrel.Acme.acme"');
+  testIncludes('a default appUserModelId', '<ShortcutProperty Key="System.AppUserModel.ID" Value="com.squirrel.acme.acme"');
   testIncludesNot('a ToastActivatorCLSID', '<ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID"');
 
   test('MSICreator includes custom shortcut properties ', async () => {
