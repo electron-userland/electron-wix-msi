@@ -6,8 +6,9 @@ import { getWindowsCompliantVersion } from '../../lib/utils/version-util';
 import { expectSameFolderContent } from './common';
 import { getProcessPath, kill, launch, runs } from './utils/app-process';
 import { checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershell } from './utils/installer';
-import { readAppUserModelId } from './utils/lnk-inspector';
+import { readAppUserModelId, readToastActivatorCLSID } from './utils/lnk-inspector';
 import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
+import { sleep } from './utils/util';
 
 const msiPath = path.join(OUT_DIR, 'HelloWix.msi');
 
@@ -16,6 +17,7 @@ interface TestConfig {
   shortcutFolderName?: string;
   shortcutName?: string;
   appUserModelId?: string;
+  toastActivatorClsid?: string;
 }
 
 describe('Electron WIX MSI', () => {
@@ -31,6 +33,7 @@ describe('Electron WIX MSI', () => {
   const tests: TestConfig[] = [
     {arch: 'x86'},
     {arch: 'x86', shortcutFolderName: 'SuperWix', shortcutName: 'SuperHello', appUserModelId: 'com.wix.super.hello'},
+    {arch: 'x86', appUserModelId: 'com.wix.super.hello', toastActivatorClsid: '7dfb947c-7f80-4472-b777-8e83b8dac298'},
     {arch: 'x64'},
   ];
 
@@ -51,6 +54,7 @@ describe('Electron WIX MSI', () => {
         configString += test.shortcutName || '';
       }
       configString +=  test.appUserModelId ? `|aumid:${test.appUserModelId}` : '';
+      configString +=  test.toastActivatorClsid ? `|toastCLSID:${test.toastActivatorClsid}` : '';
 
       return `(${configString})`;
     };
@@ -92,6 +96,11 @@ describe('Electron WIX MSI', () => {
         expect(aumid).to.be(paths.appUserModelId);
       });
 
+      it('has correct ToastActivatorCLSID', async () => {
+        const clsid = await readToastActivatorCLSID(paths.startMenuShortcut);
+        expect(clsid).to.be(paths.toastActivatorClsid);
+      });
+
       const entryPoints = [
         { name: 'stubExe', path: paths.stubExe },
         { name: 'start menu shortcut', path: paths.startMenuShortcut },
@@ -102,6 +111,7 @@ describe('Electron WIX MSI', () => {
         it(`runs the correct binary via ${entryPoint.name}`, async () => {
           await launch(entryPoint.path);
           expect(await runs(msiOptions.exe)).ok();
+          await sleep(1000);
           expect(await getProcessPath(msiOptions.exe)).to.be(paths.appExe);
           await kill(msiOptions.exe);
          });

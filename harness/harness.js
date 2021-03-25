@@ -20,6 +20,7 @@ async function harness() {
     appIconPath: path.join(APP_DIR, '../HelloWix.ico'),
     outputDirectory: OUT_DIR,
     description: 'A hello wix package',
+    toastActivatorClsid: '808ba5f6-12a4-4175-8cfe-9c10a6b1bab6',
     ui: {
       chooseDirectory: true
     },

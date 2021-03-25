@@ -34,6 +34,7 @@ const debug = require('debug')('electron-wix-msi');
 export interface MSICreatorOptions {
   appDirectory: string;
   appUserModelId?: string;
+  toastActivatorClsid?: string;
   description: string;
   exe: string;
   appIconPath?: string;
@@ -99,6 +100,7 @@ export class MSICreator {
   public updaterTemplate = getTemplate('updater-feature', true);
   public updaterPermissions = getTemplate('updater-permissions');
   public autoLaunchTemplate = getTemplate('auto-launch-feature', true);
+  public shortcutPropertyTemplate = getTemplate('shortcut-property', true);
 
   // State, overwritable beteween steps
   public wxsFile: string = '';
@@ -106,6 +108,7 @@ export class MSICreator {
   // Configuration
   public appDirectory: string;
   public appUserModelId: string;
+  public toastActivatorClsid?: string;
   public description: string;
   public exe: string;
   public iconPath?: string;
@@ -174,6 +177,7 @@ export class MSICreator {
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`.toLowerCase();
+    this.toastActivatorClsid = options.toastActivatorClsid;
 
     this.ui = options.ui !== undefined ? options.ui : false;
     this.autoUpdate = false;
@@ -263,6 +267,13 @@ export class MSICreator {
       const { chooseDirectory } = this.ui;
       enableChooseDirectory = chooseDirectory || false;
     }
+    const shortcutProperties = [ {key: 'System.AppUserModel.ID', value: this.appUserModelId } ];
+    if (this.toastActivatorClsid) {
+      shortcutProperties.push({
+        key: 'System.AppUserModel.ToastActivatorCLSID',
+        value: this.toastActivatorClsid.match(/^{.*}$/) ?
+          this.toastActivatorClsid  : `{${this.toastActivatorClsid }}` });
+    }
 
     const scaffoldReplacements = {
       '<!-- {{ComponentRefs}} -->': componentRefs.map(({ xml }) => xml).join('\n'),
@@ -273,6 +284,8 @@ export class MSICreator {
       '<!-- {{AutoLaunchFeature}} -->': this.autoLaunch ? this.autoLaunchTemplate : '{{remove newline}}',
       '<!-- {{UpdaterComponentRefs}} -->': updaterComponentRefs.map(({ xml }) => xml).join('\n'),
       '<!-- {{AutoLaunchComponentRefs}} -->': autoLaunchComponentRefs.map(({ xml }) => xml).join('\n'),
+      '<!-- {{ShortcutProperties}} -->': shortcutProperties.map(({key, value}) =>
+        this.getShortcutProperty(key, value)).join('\n'),
     };
 
     const replacements = {
@@ -592,6 +605,23 @@ export class MSICreator {
       '<!-- {{Permission}} -->': permissionXml
     });
     return { guid, componentId: registry.id, xml, featureAffinity: registry.featureAffinity || 'main' };
+  }
+
+  /**
+   * Creates Wix shortcut property.
+   *
+   * @param {key}
+   * @param {value}
+   * @returns {xml}
+   */
+   private getShortcutProperty(key: string, value: string): string {
+
+    const xml = replaceInString(this.shortcutPropertyTemplate, {
+      '{{ShortcutPropertyKey}}': key,
+      '{{ShortcutPropertyValue}}': value,
+    });
+
+    return xml;
   }
 
   /**

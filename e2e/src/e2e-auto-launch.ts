@@ -8,6 +8,7 @@ import { getProcessPath, kill, launch, runs } from './utils/app-process';
 import { checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershell } from './utils/installer';
 import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
 import { getRegistryKeyValue } from './utils/registry';
+import { sleep } from './utils/util';
 
 const msiPath = path.join(OUT_DIR, 'HelloWix.msi');
 const autoLaunchMsiOptions = {
@@ -34,7 +35,8 @@ describe('MSI auto-launch', () => {
     { label: 'x86', config: { arch: 'x86', features: { autoUpdate: false, autoLaunch: true }}},
     { label: 'x64', config: { arch: 'x64', features: { autoUpdate: false, autoLaunch: true }}},
     { label: 'x64 with launch args', config: { arch: 'x64', features: {
-      autoUpdate: false, autoLaunch: {
+      autoUpdate: false,
+      autoLaunch: {
         enabled: true,
         arguments: ['-arg1', '-arg2']
       }
@@ -95,6 +97,7 @@ describe('MSI auto-launch', () => {
         it(`runs the correct binary via ${entryPoint.name}`, async () => {
           await launch(entryPoint.path);
           expect(await runs(msiOptions.exe)).ok();
+          await sleep(1000);
           expect(await getProcessPath(msiOptions.exe)).to.be(msiPaths123beta.appExe);
           await kill(msiOptions.exe);
         });

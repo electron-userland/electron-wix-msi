@@ -22,6 +22,7 @@ export interface InstallPaths {
   startMenuShortcut: string;
   desktopShortcut: string;
   appUserModelId: string;
+  toastActivatorClsid: string;
   registryRunKey: string;
   registryUninstallKey: string;
   registryAutoUpdateKey: string;
@@ -110,13 +111,16 @@ export const checkInstall = async (name: string, version?: string) => {
 
 export const getInstallPaths = (options: MSICreatorOptions | SquirrelOptions,
                                 installMode: 'perUser' | 'perMachine' = 'perMachine'): InstallPaths => {
+  const emptyGuid = '00000000-0000-0000-0000-000000000000';
   const arch = options.arch;
   let programFiles = arch === 'x86' ? process.env['ProgramFiles(x86)']! : process.env.ProgramFiles!;
   programFiles = installMode === 'perMachine' ? programFiles : `${process.env['LOCALAPPDATA']}\\Programs`;
   const appRootFolder = path.join(programFiles, options.name!);
   const shortName = isMSICreatorOptions(options) ? options.shortName || options.name : options.name;
-  const genericAumid = `com.squirrel.${shortName}.${options.exe!.replace(/\.exe$/, '')}`;
-  const appUserModelId = isMSICreatorOptions(options) ? options.appUserModelId || genericAumid : genericAumid;
+  const genericAumid = `com.squirrel.${shortName}.${options.exe!.replace(/\.exe$/, '')}`.toLowerCase();
+  const appUserModelId = isMSICreatorOptions(options) ? options.appUserModelId?.toLowerCase() || genericAumid 
+    : genericAumid;
+  const toastActivatorClsid = isMSICreatorOptions(options) ? options.toastActivatorClsid || emptyGuid : emptyGuid;
   const registryRoot = installMode === 'perMachine' ? 'HKLM' : 'HKCU';
   const registryWow = arch === 'x86' && installMode === 'perMachine' ? 'WOW6432Node\\' : '';
   const registryRunKey = `${registryRoot}:\\SOFTWARE\\${registryWow}Microsoft\\Windows\\CurrentVersion\\Run`;
@@ -135,6 +139,7 @@ export const getInstallPaths = (options: MSICreatorOptions | SquirrelOptions,
     startMenuShortcut: isMSICreatorOptions(options) ?  path.join(startMenuRoot, `${options.shortcutFolderName || options.manufacturer}/${options.shortcutName || options.name}.lnk`) : '',
     desktopShortcut: isMSICreatorOptions(options) ? path.join(home, `Desktop/${options.shortcutName || options.name}.lnk`) : '',
     appUserModelId,
+    toastActivatorClsid,
     registryRunKey,
     registryUninstallKey,
     registryAutoUpdateKey

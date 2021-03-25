@@ -108,7 +108,7 @@
                   Description="{{ApplicationDescription}}"
                   Target="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe"
                   WorkingDirectory="APPLICATIONROOTDIRECTORY">
-          <ShortcutProperty Key="System.AppUserModel.ID" Value="{{AppUserModelId}}" />
+<!-- {{ShortcutProperties}} -->
         </Shortcut>
         <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
         <RegistryValue Root="HKCU"

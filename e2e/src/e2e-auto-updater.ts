@@ -11,6 +11,7 @@ import { hasAccessRights } from './utils/ntfs';
 import { getRegistryKeyValue, registryKeyExists } from './utils/registry';
 import { cleanSquirrelOutDir, createSquirrelPackage, defaultSquirrelOptions, OUT_SQRL_DIR } from './utils/squirrel-packager';
 import { serveSquirrel, stopServingSquirrel } from './utils/squirrel-server';
+import { sleep } from './utils/util';
 
 interface TestConfig {
   arch: 'x86' | 'x64';
@@ -212,6 +213,7 @@ describe('MSI auto-updating', () => {
               const paths = shouldUpdate ? squirrelPaths130 : msiPaths123beta;
               await launch(entryPoint.path);
               expect(await runs(msiOptions.exe)).ok();
+              await sleep(1000);
               expect(await getProcessPath(msiOptions.exe)).to.be(paths.appExe);
               await kill(msiOptions.exe);
             });
