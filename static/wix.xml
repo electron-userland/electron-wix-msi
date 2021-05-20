@@ -3,7 +3,7 @@
   <!-- http://wixtoolset.org/documentation/manual/v3/xsd/wix/product.html -->
   <Product Id="{{ProductCode}}" 
            UpgradeCode="{{UpgradeCode}}"
-           Name = "{{ApplicationName}} (Machine - MSI)"
+           Name = "{{ApplicationName}}"
            Version="{{Version}}"
            Manufacturer="{{Manufacturer}}"
            Language="{{Language}}">
