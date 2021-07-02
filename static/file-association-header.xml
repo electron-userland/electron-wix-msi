@@ -1,0 +1,14 @@
+<!-- {{I}} --><!-- Capabilities keys for Vista/7 "Set Program Access and Defaults" -->
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\{{ShortAppName}}\Capabilities" Name="ApplicationDescription" Value="{{ApplicationDescription}}" Type="string" />
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\{{ShortAppName}}\Capabilities" Name="ApplicationIcon" Value="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe,0" Type="string" />
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\{{ShortAppName}}\Capabilities" Name="ApplicationName" Value="{{ApplicationName}}" Type="string" />
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\{{ShortAppName}}\Capabilities\DefaultIcon" Value="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe,1" Type="string" />
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\{{ShortAppName}}\Capabilities\shell\Open\command" Value="&quot;[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe&quot; &quot;%1&quot;" Type="string" />
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\RegisteredApplications" Name="{{ShortAppName}}" Value="SOFTWARE\{{ShortAppName}}\Capabilities" Type="string" />
+<!-- {{I}} -->
+<!-- {{I}} --><!-- App Paths to support Start,Run -> "{{ShortAppName}}" -->
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{{ApplicationBinary}}.exe" Value="[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe" Type="string" />
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{{ApplicationBinary}}.exe" Name="Path" Value="[APPLICATIONROOTDIRECTORY]" Type="string" />
+<!-- {{I}} -->
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\{{ApplicationBinary}}.exe\shell\open" Name="FriendlyAppName" Value="{{ApplicationName}}" Type="string" />
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\{{ApplicationBinary}}.exe\shell\open\command" Value="&quot;[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe&quot; &quot;%1&quot;" Type="string" />

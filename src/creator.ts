@@ -60,6 +60,7 @@ export interface MSICreatorOptions {
   defaultInstallMode?: 'perUser' | 'perMachine';
   rebootMode?: string;
   installLevel?: number;
+  associateExtensions?: string;
 }
 
 export interface UIOptions {
@@ -101,6 +102,8 @@ export class MSICreator {
   public updaterPermissions = getTemplate('updater-permissions');
   public autoLaunchTemplate = getTemplate('auto-launch-feature', true);
   public shortcutPropertyTemplate = getTemplate('shortcut-property', true);
+  public fileAssociationHeaderTemplate = getTemplate('file-association-header');
+  public fileAssociationTemplate = getTemplate('file-association');
 
   // State, overwritable beteween steps
   public wxsFile: string = '';
@@ -137,6 +140,8 @@ export class MSICreator {
   public productCode: string;
   public rebootMode: string;
   public installLevel: number;
+  public hasAssociateExtensions: boolean;
+  public associateExtensions?: string;
 
   public ui: UIOptions | boolean;
 
@@ -146,6 +151,7 @@ export class MSICreator {
   private registry: Array<Registry> = [];
   private tree: FileFolderTree | undefined;
   private components: Array<Component> = [];
+  private exeFilename: string;
 
   constructor(options: MSICreatorOptions) {
     this.appDirectory = path.normalize(options.appDirectory);
@@ -153,6 +159,7 @@ export class MSICreator {
     this.certificatePassword = options.certificatePassword;
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, '');
+    this.exeFilename = this.exe + '.exe';
     this.iconPath = options.appIconPath;
     this.extensions = options.extensions || [];
     this.lightSwitches = options.lightSwitches || [];
@@ -174,6 +181,8 @@ export class MSICreator {
     this.productCode = uuid().toUpperCase();
     this.rebootMode = options.rebootMode || 'ReallySuppress';
     this.installLevel = options.installLevel || 2;
+    this.hasAssociateExtensions = options.associateExtensions !== undefined;
+    this.associateExtensions = options.associateExtensions;
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`.toLowerCase();
@@ -567,16 +576,54 @@ export class MSICreator {
   private getFileComponent(file: File, indent: number): FileComponent {
     const guid = uuid();
     const componentId = this.getComponentId(file.path);
+    let extensionAssociation = '';
+    if (this.hasAssociateExtensions && file.name === this.exeFilename) {
+      extensionAssociation = this.getExtensionAssociation(indent + 2, componentId);
+    }
     const xml = replaceInString(this.fileComponentTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
       '{{ComponentId}}': componentId,
       '{{FileId}}': componentId,
       '{{Name}}': file.name,
       '{{Guid}}': guid,
-      '{{SourcePath}}': file.path
+      '{{SourcePath}}': file.path,
+      '<!-- {{ExtensionAssociation}} -->': extensionAssociation
     });
 
     return { guid, componentId, xml, file, featureAffinity: file.featureAffinity || 'main' };
+  }
+
+  private getExtensionAssociation(indent: number, fileId: string): string {
+    const shortAppName = this.exe.replace(/[^A-Za-z0-9]/g, '');
+    const xml = replaceInString(this.fileAssociationHeaderTemplate, {
+      '<!-- {{I}} -->': padStart('', indent),
+      '{{ApplicationDescription}}': this.name,
+      '{{ApplicationBinary}}': this.exe,
+      '{{ApplicationName}}': this.name,
+      '{{ShortAppName}}': shortAppName
+    }) + this.getExtensionAssociationList(indent, fileId, shortAppName).join('\n');
+
+    return xml;
+  }
+
+  private getExtensionAssociationList(indent: number, fileId: string, shortAppName: string): Array<string> {
+    if (this.associateExtensions === undefined) {
+      return [''];
+    }
+    const extList = this.associateExtensions.replace('.', '').split(/[,;]/);
+    return extList.map((ext) => {
+      const xml = replaceInString(this.fileAssociationTemplate, {
+        '<!-- {{I}} -->': padStart('', indent),
+        '{{ApplicationDescription}}': this.name,
+        '{{ApplicationBinary}}': this.exe,
+        '{{ApplicationName}}': this.name,
+        '{{ShortAppName}}': shortAppName,
+        '{{ExeFileId}}': fileId,
+        '{{ext}}': ext
+      });
+
+      return xml;
+    });
   }
 
   /**
