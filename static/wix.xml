@@ -81,7 +81,7 @@
     </SetProperty>
 
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
-
+<!-- {{Icon}}-->
 <!-- {{UI}} -->
 
     <!-- Step 2: Add files and directories -->

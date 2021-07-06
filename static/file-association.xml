@@ -6,7 +6,7 @@
 <!-- {{I}} -->
 <!-- {{I}} --><!-- {{ShortAppName}}.Document ProgID -->
 <!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\Classes\{{ShortAppName}}.{{ext}}" Name="FriendlyTypeName" Value="{{ApplicationName}} {{ext}} File" Type="string" />
-<!-- {{I}} --><ProgId Id="{{ShortAppName}}.{{ext}}" Description="{{ApplicationName}} {{ext}} File" Icon="{{ExeFileId}}" IconIndex="0" Advertise="yes">
+<!-- {{I}} --><ProgId Id="{{ShortAppName}}.{{ext}}" Description="{{ApplicationName}} {{ext}} File" Icon="{{IconId}}" IconIndex="0" Advertise="yes">
 <!-- {{I}} -->    <Extension Id="{{ext}}">
 <!-- {{I}} -->        <Verb Id="open" Command="Open {{ext}}" Argument="&quot;%1&quot;" />
 <!-- {{I}} -->        <MIME Advertise="yes" ContentType="application/{{ext}}" Default="yes" />

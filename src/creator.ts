@@ -104,6 +104,7 @@ export class MSICreator {
   public shortcutPropertyTemplate = getTemplate('shortcut-property', true);
   public fileAssociationHeaderTemplate = getTemplate('file-association-header');
   public fileAssociationTemplate = getTemplate('file-association');
+  public iconTemplate = getTemplate('icon');
 
   // State, overwritable beteween steps
   public wxsFile: string = '';
@@ -152,6 +153,7 @@ export class MSICreator {
   private tree: FileFolderTree | undefined;
   private components: Array<Component> = [];
   private exeFilename: string;
+  private exeFilePath: string;
 
   constructor(options: MSICreatorOptions) {
     this.appDirectory = path.normalize(options.appDirectory);
@@ -160,6 +162,7 @@ export class MSICreator {
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, '');
     this.exeFilename = this.exe + '.exe';
+    this.exeFilePath = this.appDirectory.replace(/[\/\\]$/, '') + path.sep + this.exeFilename;
     this.iconPath = options.appIconPath;
     this.extensions = options.extensions || [];
     this.lightSwitches = options.lightSwitches || [];
@@ -287,6 +290,7 @@ export class MSICreator {
     const scaffoldReplacements = {
       '<!-- {{ComponentRefs}} -->': componentRefs.map(({ xml }) => xml).join('\n'),
       '<!-- {{Directories}} -->': directories,
+      '<!-- {{Icon}}-->': this.getIcon(),
       '<!-- {{UI}} -->': this.getUI(),
       '<!-- {{AutoUpdatePermissions}} -->': this.autoUpdate ? this.updaterPermissions : '{{remove newline}}',
       '<!-- {{AutoUpdateFeature}} -->': this.autoUpdate ? this.updaterTemplate : '{{remove newline}}',
@@ -425,6 +429,21 @@ export class MSICreator {
     if (code !== 0) {
       throw new Error(`Signtool exited with code ${code}. Stderr: ${stderr}. Stdout: ${stdout}`);
     }
+  }
+
+  private getIcon(): string {
+    let xml = '';
+    const iconPath = this.iconPath || this.exeFilePath;
+
+    if (this.hasAssociateExtensions) {
+      xml = replaceInString(this.iconTemplate, {
+        '<!-- {{I}} -->': '    ',
+        '{{IconId}}': 'AppIcon.ico',
+        '{{IconSource}}': iconPath
+      });
+    }
+
+    return xml;
   }
 
   /**
@@ -577,8 +596,8 @@ export class MSICreator {
     const guid = uuid();
     const componentId = this.getComponentId(file.path);
     let extensionAssociation = '';
-    if (this.hasAssociateExtensions && file.name === this.exeFilename) {
-      extensionAssociation = this.getExtensionAssociation(indent + 2, componentId);
+    if (this.hasAssociateExtensions && file.path === this.exeFilePath) {
+      extensionAssociation = this.getExtensionAssociation(indent + 2);
     }
     const xml = replaceInString(this.fileComponentTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
@@ -593,7 +612,7 @@ export class MSICreator {
     return { guid, componentId, xml, file, featureAffinity: file.featureAffinity || 'main' };
   }
 
-  private getExtensionAssociation(indent: number, fileId: string): string {
+  private getExtensionAssociation(indent: number): string {
     const shortAppName = this.exe.replace(/[^A-Za-z0-9]/g, '');
     const xml = replaceInString(this.fileAssociationHeaderTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
@@ -601,12 +620,12 @@ export class MSICreator {
       '{{ApplicationBinary}}': this.exe,
       '{{ApplicationName}}': this.name,
       '{{ShortAppName}}': shortAppName
-    }) + this.getExtensionAssociationList(indent, fileId, shortAppName).join('\n');
+    }) + this.getExtensionAssociationList(indent, shortAppName).join('\n');
 
     return xml;
   }
 
-  private getExtensionAssociationList(indent: number, fileId: string, shortAppName: string): Array<string> {
+  private getExtensionAssociationList(indent: number, shortAppName: string): Array<string> {
     if (this.associateExtensions === undefined) {
       return [''];
     }
@@ -618,7 +637,7 @@ export class MSICreator {
         '{{ApplicationBinary}}': this.exe,
         '{{ApplicationName}}': this.name,
         '{{ShortAppName}}': shortAppName,
-        '{{ExeFileId}}': fileId,
+        '{{IconId}}': 'AppIcon.ico',
         '{{ext}}': ext
       });
 
@@ -699,6 +718,8 @@ export class MSICreator {
       this.description,
       this.windowsCompliantVersion,
       this.iconPath);
+
+    this.exeFilePath = stubExe;
 
     const installInfoFile = createInstallInfoFile(this.manufacturer,
                                                   this.shortName,
