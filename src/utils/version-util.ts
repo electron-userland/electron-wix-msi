@@ -18,6 +18,24 @@ function isWindowsCompliant(version: string): boolean {
   return true;
 }
 
+function getBuildNumber(version: semver.SemVer): string {
+  let ret = '0';
+
+  if (version) {
+    if (version.build) {
+      for (const build of version.build) {
+        const buildNum = Number(build);
+        if (!isNaN(buildNum) && Number.isInteger(buildNum)) {
+          ret = build;
+          break;
+        }
+      }
+    }
+  }
+
+  return ret;
+}
+
 /**
  * Takes a semantic version number (2.3.1-alpha234234234) and returns
  * something more Windows-compatible (2.3.1.0).
@@ -26,13 +44,15 @@ function isWindowsCompliant(version: string): boolean {
  * @returns {string}
  */
 export function getWindowsCompliantVersion(input: string): string {
-  if (isWindowsCompliant(input)) {
-    return input;
+  const winVer = input.replace('+', '.');
+  if (isWindowsCompliant(winVer)) {
+    return winVer;
   }
 
   const parsed = semver.parse(input);
   if (parsed) {
-    return `${parsed.major}.${parsed.minor}.${parsed.patch}.0`;
+    const build = getBuildNumber(parsed);
+    return `${parsed.major}.${parsed.minor}.${parsed.patch}.${build}`;
   } else {
     throw new Error('Could not parse semantic version input string');
   }

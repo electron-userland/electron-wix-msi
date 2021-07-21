@@ -8,6 +8,15 @@ test('gives a Windows compliant version if it is already complaint',() => {
   expect(getWindowsCompliantVersion('1.2.3.444')).toBe('1.2.3.444');
 });
 
+test('gives a windows compliant version if it is a semantic version with build', () => {
+  expect(getWindowsCompliantVersion('1.2.3+444')).toBe('1.2.3.444');
+});
+
+test('gives a windows compliant version if it is a semantic version with complex build', () => {
+  expect(getWindowsCompliantVersion('1.2.3+alpha.444.zeta')).toBe('1.2.3.444');
+});
+
+
 test('gives a Windows compliant version if it is a alpha version',() => {
   expect(getWindowsCompliantVersion('1.2.3-alpha')).toBe('1.2.3.0');
 });
