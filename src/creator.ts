@@ -308,6 +308,7 @@ export class MSICreator {
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
       '{{DesktopShortcutGuid}}': uuid(),
       '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
+      '{{PackageScope}}': this.defaultInstallMode,
       '{{InstallPerUser}}': this.defaultInstallMode === 'perUser' ? '1' : '0',
       '{{ProductCode}}': this.productCode,
       '{{RandomGuid}}': uuid().toString(),
