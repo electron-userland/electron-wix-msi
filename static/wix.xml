@@ -15,8 +15,7 @@
     <Package InstallerVersion="405"
              Compressed="yes"
              Comments="Windows Installer Package"
-             Platform="{{Platform}}"
-             InstallScope="{{PackageScope}}"/>
+             Platform="{{Platform}}"/>
     <!-- Don't allow downgrades -->
     <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A later version of this product is already installed. Setup will now exit."/>
     <!-- This will hide our Uninstall entry in Apps & Features. We doing this so
@@ -26,6 +25,9 @@
     via PowerShell and other means. To differentiate we give the public entry a slightly
     different name to make admins life easier.  -->
     <Property Id="VisibleProductName" Value="{{ApplicationName}} (Machine)" />
+    <!-- Signals Single Package Authoring. This pacakge can pe installed perMachine
+    or perUser. The mode is determined by the property below. -->
+    <Property Id="ALLUSERS" Secure="yes" Value="2" />
     <!-- Tells the package to install perUser or perMachine. In case of perUser, all
     files will be redirected to the user profile and all registry entries to HKCU. -->
     <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="{{InstallPerUser}}" />
