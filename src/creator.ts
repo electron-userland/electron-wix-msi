@@ -46,6 +46,7 @@ export interface MSICreatorOptions {
   name: string;
   outputDirectory: string;
   programFilesFolderName?: string;
+  nestedFolderName?: string;
   shortName?: string;
   shortcutFolderName?: string;
   shortcutName?: string;
@@ -95,6 +96,7 @@ export class MSICreator {
   public permissionTemplate = getTemplate('permission');
   public componentRefTemplate = getTemplate('component-ref');
   public directoryTemplate = getTemplate('directory');
+  public directoryNestedInstallTemplate = getTemplate('directory-nested-install');
   public wixTemplate = getTemplate('wix');
   public uiTemplate = getTemplate('ui', true);
   public wixVariableTemplate = getTemplate('wix-variable', true);
@@ -121,6 +123,7 @@ export class MSICreator {
   public name: string;
   public outputDirectory: string;
   public programFilesFolderName: string;
+  public nestedFolderName: string;
   public shortName: string;
   public shortcutFolderName: string;
   public shortcutName: string;
@@ -164,6 +167,7 @@ export class MSICreator {
     this.name = options.name;
     this.outputDirectory = options.outputDirectory;
     this.programFilesFolderName = options.programFilesFolderName || options.name;
+    this.nestedFolderName = options.nestedFolderName || '';
     this.shortName = options.shortName || options.name;
     this.shortcutFolderName = options.shortcutFolderName || options.manufacturer;
     this.shortcutName = options.shortcutName || options.name;
@@ -517,12 +521,23 @@ export class MSICreator {
       childRegistry.length > 0 ? '\n' : '',
       childRegistry.join('\n')].join('');
 
-    const directoryXml = replaceInString(this.directoryTemplate, {
-      '<!-- {{I}} -->': padStart('', indent),
-      '{{DirectoryId}}': id || this.getComponentId(treePath),
-      '{{DirectoryName}}': name,
-      '<!-- {{Children}} -->': children
-    });
+    let directoryXml;
+    if(this.nestedFolderName && indent == 8) {
+      directoryXml = replaceInString(this.directoryNestedInstallTemplate, {
+        '<!-- {{I}} -->': padStart('', indent),
+        '{{DirectoryId}}': id || this.getComponentId(treePath),
+        '{{DirectoryName}}': name,
+        '{{NestedDirectoryName}}': this.nestedFolderName,
+        '<!-- {{Children}} -->': children
+      });
+    } else {
+      directoryXml = replaceInString(this.directoryTemplate, {
+        '<!-- {{I}} -->': padStart('', indent),
+        '{{DirectoryId}}': id || this.getComponentId(treePath),
+        '{{DirectoryName}}': name,
+        '<!-- {{Children}} -->': children
+      });
+    }
     return `${directoryXml}${childDirectories.length > 0 && !id ? '\n' : ''}`;
   }
 
