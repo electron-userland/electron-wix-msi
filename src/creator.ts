@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import { flatMap, padStart } from 'lodash';
 import * as path from 'path';
-import * as uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 import { spawnPromise } from './utils/spawn';
 
 import { Component,
@@ -528,7 +528,7 @@ export class MSICreator {
       childRegistry.join('\n')].join('');
 
     let directoryXml;
-    if(this.nestedFolderName && indent == 8) {
+    if(this.nestedFolderName && indent === 8) {
       directoryXml = replaceInString(this.directoryNestedInstallTemplate, {
         '<!-- {{I}} -->': padStart('', indent),
         '{{DirectoryId}}': id || this.getComponentId(treePath),

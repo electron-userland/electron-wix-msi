@@ -1,3 +1,10 @@
+# 4.0.0
+ * Breaking: Upgraded dependencies, now requiring Node v14+
+ * Add localization support
+
+# 3.2.0
+ * Write toast activator CLSID in shortcut
+
 # 3.1.0
  * Make `INSTALLLEVEL` & `REBOOT` configurable (thanks to @HKrausAxon)
  * Allow passing of additional parameters to `light.exe` (thanks to @Qazzian)
