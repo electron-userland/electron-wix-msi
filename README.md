@@ -38,7 +38,11 @@ npm i --save-dev electron-wix-msi
 ## Whats new?
 Version 3 is a major release for this toolkit. Many internals were reworked and V3 
 delivers improvements listed below. Please look out for the **🆕 icon throughout this
-documentation for new parameter.
+documentation for new parameter. Versions 4 and above are only adding features
+and requiring newer versions of Node.js without actually requiring any code changes on
+your part.
+
+See the CHANGELOG.md for details.
 
 ### New install folder structure
 A new folder structure allows to update the MSI installation while your app is running
