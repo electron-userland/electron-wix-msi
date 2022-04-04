@@ -174,6 +174,7 @@ detailed configuration of the UI. It has the following optional properties:
 * `chooseDirectory` (boolean, optional) - If set to `true`, the end user will be
   able to choose the installation directory. Set to `false` by default. Without
   effect if a custom `template` is used.
+* `localizations` (string[], optional) - Provide an array of paths to `.wxl` files containing the localizations.
 * `images` (Optional) - Overwrites default installer images with custom files. I
   recommend JPG.
   * `background` - (optional, string) 493 x 312 Background bitmap used on the
