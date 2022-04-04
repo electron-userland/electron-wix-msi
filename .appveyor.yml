@@ -1,5 +1,5 @@
 install:
-  - ps: Install-Product node '8'
+  - ps: Install-Product node '16'
   - npm config set spin false
   - npm install
 test_script:
