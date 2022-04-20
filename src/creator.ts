@@ -62,6 +62,7 @@ export interface MSICreatorOptions {
   rebootMode?: string;
   installLevel?: number;
   bundled?: boolean;
+  noDesktopShortcut?: boolean;
 }
 
 export interface UIOptions {
@@ -101,6 +102,8 @@ export class MSICreator {
   public wixTemplate = getTemplate('wix');
   public uiTemplate = getTemplate('ui', true);
   public wixVariableTemplate = getTemplate('wix-variable', true);
+  public addDesktopTemplate = getTemplate('add-desktop-shortcut', true);
+  public addDesktopFeatureTemplate = getTemplate('add-desktop-shortcut-feature', true);
   public updaterTemplate = getTemplate('updater-feature', true);
   public updaterPermissions = getTemplate('updater-permissions');
   public autoLaunchTemplate = getTemplate('auto-launch-feature', true);
@@ -143,6 +146,7 @@ export class MSICreator {
   public rebootMode: string;
   public installLevel: number;
   public bundled: boolean;
+  public noDesktopShortcut?: boolean;
 
   public ui: UIOptions | boolean;
 
@@ -182,6 +186,7 @@ export class MSICreator {
     this.rebootMode = options.rebootMode || 'ReallySuppress';
     this.installLevel = options.installLevel || 2;
     this.bundled = options.bundled || false;
+    this.noDesktopShortcut = options.noDesktopShortcut || false;
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`.toLowerCase();
@@ -288,6 +293,8 @@ export class MSICreator {
       '<!-- {{Directories}} -->': directories,
       '<!-- {{UI}} -->': this.getUI(),
       '<!-- {{AutoUpdatePermissions}} -->': this.autoUpdate ? this.updaterPermissions : '{{remove newline}}',
+      '<!-- {{AddDesktopShortcut}} -->': this.noDesktopShortcut ? '{{remove newline}}' : this.addDesktopTemplate,
+      '<!-- {{AddDesktopShortcutFeature}} -->': this.noDesktopShortcut ? '{{remove newline}}' : this.addDesktopFeatureTemplate,
       '<!-- {{AutoUpdateFeature}} -->': this.autoUpdate ? this.updaterTemplate : '{{remove newline}}',
       '<!-- {{AutoLaunchFeature}} -->': this.autoLaunch ? this.autoLaunchTemplate : '{{remove newline}}',
       '<!-- {{UpdaterComponentRefs}} -->': updaterComponentRefs.map(({ xml }) => xml).join('\n'),
