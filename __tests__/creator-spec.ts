@@ -608,26 +608,26 @@ describe.skip('creator', () => {
   
     testIncludes('the ToastActivatorCLSID', '<ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{d3519df4-76a7-412f-bd73-9d7746d1d757}"/>');
   });
-});
-
-describe('extension association', () => {
-  test('MSICreator adds extension associations', async () => {
-    const msiCreator = new MSICreator({
-      ...defaultOptions, associateExtensions: 'myext,.myex2'
+  
+  describe('extension association', () => {
+    test('MSICreator adds extension associations', async () => {
+      const msiCreator = new MSICreator({
+        ...defaultOptions, associateExtensions: 'myext,.myex2'
+      });
+      const { wxsFile } = await msiCreator.create();
+      wxsContent = await fs.readFile(wxsFile, 'utf-8');
+      const ProgIdMyextCount = wxsContent.split('ProgId Id="acme.myext"').length;
+      // Ensure only one ProgID for myext (splits to 2)
+      expect(ProgIdMyextCount).toEqual(2);
+      expect(wxsFile).toBeTruthy();
     });
-    const { wxsFile } = await msiCreator.create();
-    wxsContent = await fs.readFile(wxsFile, 'utf-8');
-    const ProgIdMyextCount = wxsContent.split('ProgId Id="acme.myext"').length;
-    // Ensure only one ProgID for myext (splits to 2)
-    expect(ProgIdMyextCount).toEqual(2);
-    expect(wxsFile).toBeTruthy();
+    
+    testIncludes('App Description Registry', '<RegistryValue Root="HKLM" Key="SOFTWARE\\acme\\Capabilities" Name="ApplicationDescription" Value="Acme"');
+    testIncludes('App Exe Registry', '<RegistryValue Root="HKLM" Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\acme.exe" Value="[APPLICATIONROOTDIRECTORY]acme.exe"');
+    testIncludes('App First Extension Registry Assoc', '<RegistryValue Root="HKLM" Key="SOFTWARE\\acme\\Capabilities\\FileAssociations" Name=".myext" Value="acme.myext" Type="string" />');
+    testIncludes('App Second Extension Registry Assoc', '<RegistryValue Root="HKLM" Key="SOFTWARE\\Classes\\Applications\\acme.exe\\SupportedTypes" Name=".myex2" Value="" Type="string" />');
+    testIncludes('Exe file ID in ProgID', '<ProgId Id="acme.myext" Description="Acme myext File" Icon="AppIcon.ico');
+    regexTestIncludes('Icon included in wxs', /<Icon Id="AppIcon.ico" SourceFile=".*Stub.exe"/)
   });
-
-  testIncludes('App Description Registry', '<RegistryValue Root="HKLM" Key="SOFTWARE\\acme\\Capabilities" Name="ApplicationDescription" Value="Acme"');
-  testIncludes('App Exe Registry', '<RegistryValue Root="HKLM" Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\acme.exe" Value="[APPLICATIONROOTDIRECTORY]acme.exe"');
-  testIncludes('App First Extension Registry Assoc', '<RegistryValue Root="HKLM" Key="SOFTWARE\\acme\\Capabilities\\FileAssociations" Name=".myext" Value="acme.myext" Type="string" />');
-  testIncludes('App Second Extension Registry Assoc', '<RegistryValue Root="HKLM" Key="SOFTWARE\\Classes\\Applications\\acme.exe\\SupportedTypes" Name=".myex2" Value="" Type="string" />');
-  testIncludes('Exe file ID in ProgID', '<ProgId Id="acme.myext" Description="Acme myext File" Icon="AppIcon.ico');
-  regexTestIncludes('Icon included in wxs', /<Icon Id="AppIcon.ico" SourceFile=".*Stub.exe"/)
 });
 
