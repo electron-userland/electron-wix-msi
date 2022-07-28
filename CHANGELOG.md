@@ -1,3 +1,7 @@
+# 4.1.0
+ * Add icon extraction from exe
+ * Associate extensions with exe
+ * Better support for semantic version to Windows version
 # 4.0.0
  * Breaking: Upgraded dependencies, now requiring Node v14+
  * Add localization support

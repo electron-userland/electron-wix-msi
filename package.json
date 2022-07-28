@@ -1,6 +1,6 @@
 {
   "name": "@evoleap/electron-wix-msi",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Creates an MSI installer for your Electron app",
   "license": "MIT",
   "repository": "https://github.com/felixrieseberg/electron-wix-msi",
