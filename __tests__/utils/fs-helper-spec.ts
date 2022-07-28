@@ -21,16 +21,22 @@ const tests = [
 ];
 
 beforeAll(() => {
-    // console.log call needed as workaround to make jest work with mock-fs
-    console.log('');
-    getMockFileSystem();
-    mockFs(getMockFileSystem());
-  });
+  // console.log call needed as workaround to make jest work with mock-fs
+  console.log('');
+});
+
+beforeEach(() => {
+  getMockFileSystem();
+  mockFs(getMockFileSystem());
+});
 
 afterAll(() => {
+  process.env.TEMP = originalTmp;
+});
+
+afterEach(() => {
     mockFs.restore();
-    process.env.TEMP = originalTmp;
-  });
+});
 
 tests.forEach((config) => {
   it(`gets a temp file path (case:${config.case})`, () => {

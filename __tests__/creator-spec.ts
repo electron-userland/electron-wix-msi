@@ -20,7 +20,6 @@ const mockSpawnArgs = {
   options: {}
 };
 
-
 beforeAll(() => {
   // console.log call needed as workaround to make jest work with mock-fs
   console.log('');
@@ -47,13 +46,14 @@ beforeAll(() => {
       mockSpawnArgs.options = options;
       return new MockSpawn(name, args, options, mockPassedFs);
     }
-  }));
+  }));  
+});
 
+beforeEach(() => {
   mockFs(getMockFileSystem());
 });
 
 afterAll(() => {
-  mockFs.restore();
   jest.unmock('child_process');
 });
 
@@ -62,6 +62,7 @@ afterEach(() => {
   mockSpawnArgs.name = '';
   mockSpawnArgs.args = [];
   mockSpawnArgs.options = {};
+  mockFs.restore();
 });
 
 const defaultOptions = {
@@ -283,6 +284,18 @@ test('MSICreator compile() passes cultures args to the binary', async () => {
   expect(mockSpawnArgs.args).toContain(`-cultures:${cultures}`);
 });
 
+test('MSICreator compile() passes localizations args to the binary', async () => {
+  const localizationFilePath = 'testDirectory/localization.wxl';
+  const ui = { localizations: [localizationFilePath] };
+  const msiCreator = new MSICreator({ ...defaultOptions, ui });
+
+  await msiCreator.create();
+  await msiCreator.compile();
+
+  expect(mockSpawnArgs.args).toContain("-loc");
+  expect(mockSpawnArgs.args).toContain(localizationFilePath);
+});
+
 test('MSICreator compile() passes extension args to the binary', async () => {
   const extensions = ['WixUIExtension', 'WixUtilExtension'];
   const msiCreator = new MSICreator({ ...defaultOptions, extensions });
@@ -450,7 +463,6 @@ test('MSICreator create() shortcut name override', async () => {
 });
 testIncludes('Custom shortcut name', '<Shortcut Id="ApplicationStartMenuShortcut" Name="BeepBeep"');
 
-testIncludes('Single Package Authoring setting', '<Property Id="ALLUSERS" Secure="yes" Value="2" />');
 testIncludes('correct default perUser setting', '<Property Id="MSIINSTALLPERUSER" Secure="yes" Value="0" />');
 testIncludes('Install path property', '<Property Id="INSTALLPATH">');
 testIncludes('Install RegistrySearch', 'RegistrySearch Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall');
@@ -609,7 +621,7 @@ describe('extension association', () => {
     expect(ProgIdMyextCount).toEqual(2);
     expect(wxsFile).toBeTruthy();
   });
-
+  
   testIncludes('App Description Registry', '<RegistryValue Root="HKLM" Key="SOFTWARE\\acme\\Capabilities" Name="ApplicationDescription" Value="Acme"');
   testIncludes('App Exe Registry', '<RegistryValue Root="HKLM" Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\acme.exe" Value="[APPLICATIONROOTDIRECTORY]acme.exe"');
   testIncludes('App First Extension Registry Assoc', '<RegistryValue Root="HKLM" Key="SOFTWARE\\acme\\Capabilities\\FileAssociations" Name=".myext" Value="acme.myext" Type="string" />');

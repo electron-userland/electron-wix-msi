@@ -1,0 +1,5 @@
+<!-- {{I}} --><Directory Id="ParentAppFolder" Name="{{NestedDirectoryName}}">
+<!-- {{I}} --><Directory Id="{{DirectoryId}}" Name="{{DirectoryName}}">
+<!-- {{Children}} -->
+<!-- {{I}} --></Directory>
+<!-- {{I}} --></Directory>

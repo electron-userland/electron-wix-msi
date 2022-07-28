@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import { flatMap, padStart } from 'lodash';
 import * as path from 'path';
-import * as uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 import { spawnPromise } from './utils/spawn';
 
 import { Component,
@@ -46,6 +46,7 @@ export interface MSICreatorOptions {
   name: string;
   outputDirectory: string;
   programFilesFolderName?: string;
+  nestedFolderName?: string;
   shortName?: string;
   shortcutFolderName?: string;
   shortcutName?: string;
@@ -61,12 +62,14 @@ export interface MSICreatorOptions {
   rebootMode?: string;
   installLevel?: number;
   associateExtensions?: string;
+  bundled?: boolean;
 }
 
 export interface UIOptions {
   chooseDirectory?: boolean;
   template?: string;
   images?: UIImages;
+  localizations?: Array<string>;
 }
 
 export interface UIImages {
@@ -95,6 +98,7 @@ export class MSICreator {
   public permissionTemplate = getTemplate('permission');
   public componentRefTemplate = getTemplate('component-ref');
   public directoryTemplate = getTemplate('directory');
+  public directoryNestedInstallTemplate = getTemplate('directory-nested-install');
   public wixTemplate = getTemplate('wix');
   public uiTemplate = getTemplate('ui', true);
   public wixVariableTemplate = getTemplate('wix-variable', true);
@@ -124,6 +128,7 @@ export class MSICreator {
   public name: string;
   public outputDirectory: string;
   public programFilesFolderName: string;
+  public nestedFolderName: string;
   public shortName: string;
   public shortcutFolderName: string;
   public shortcutName: string;
@@ -143,6 +148,7 @@ export class MSICreator {
   public installLevel: number;
   public hasAssociateExtensions: boolean;
   public associateExtensions?: string;
+  public bundled: boolean;
 
   public ui: UIOptions | boolean;
 
@@ -172,6 +178,7 @@ export class MSICreator {
     this.name = options.name;
     this.outputDirectory = options.outputDirectory;
     this.programFilesFolderName = options.programFilesFolderName || options.name;
+    this.nestedFolderName = options.nestedFolderName || '';
     this.shortName = options.shortName || options.name;
     this.shortcutFolderName = options.shortcutFolderName || options.manufacturer;
     this.shortcutName = options.shortcutName || options.name;
@@ -186,6 +193,7 @@ export class MSICreator {
     this.installLevel = options.installLevel || 2;
     this.hasAssociateExtensions = options.associateExtensions !== undefined;
     this.associateExtensions = options.associateExtensions;
+    this.bundled = options.bundled || false;
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`.toLowerCase();
@@ -321,6 +329,7 @@ export class MSICreator {
       '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
       '{{DesktopShortcutGuid}}': uuid(),
       '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
+      '{{PackageScope}}': this.defaultInstallMode,
       '{{InstallPerUser}}': this.defaultInstallMode === 'perUser' ? '1' : '0',
       '{{ProductCode}}': this.productCode,
       '{{RandomGuid}}': uuid().toString(),
@@ -378,6 +387,11 @@ export class MSICreator {
     }
 
     const preArgs = flatMap(this.extensions.map((e) => (['-ext', e])));
+
+    if (typeof this.ui === 'object' && this.ui.localizations && this.ui.localizations.length && type === 'msi') {
+       this.ui.localizations.forEach((l) => preArgs.push('-loc', l));
+     }
+
 
     if (type === 'msi' && this.cultures) {
       preArgs.unshift(`-cultures:${this.cultures}`);
@@ -541,12 +555,23 @@ export class MSICreator {
       childRegistry.length > 0 ? '\n' : '',
       childRegistry.join('\n')].join('');
 
-    const directoryXml = replaceInString(this.directoryTemplate, {
-      '<!-- {{I}} -->': padStart('', indent),
-      '{{DirectoryId}}': id || this.getComponentId(treePath),
-      '{{DirectoryName}}': name,
-      '<!-- {{Children}} -->': children
-    });
+    let directoryXml;
+    if(this.nestedFolderName && indent === 8) {
+      directoryXml = replaceInString(this.directoryNestedInstallTemplate, {
+        '<!-- {{I}} -->': padStart('', indent),
+        '{{DirectoryId}}': id || this.getComponentId(treePath),
+        '{{DirectoryName}}': name,
+        '{{NestedDirectoryName}}': this.nestedFolderName,
+        '<!-- {{Children}} -->': children
+      });
+    } else {
+      directoryXml = replaceInString(this.directoryTemplate, {
+        '<!-- {{I}} -->': padStart('', indent),
+        '{{DirectoryId}}': id || this.getComponentId(treePath),
+        '{{DirectoryName}}': name,
+        '<!-- {{Children}} -->': children
+      });
+    }
     return `${directoryXml}${childDirectories.length > 0 && !id ? '\n' : ''}`;
   }
 
@@ -765,15 +790,18 @@ export class MSICreator {
 
     // The following keys are for our uninstall entry because we hiding the original one.
     // This allows us to set permissions in case the auto-updater is installed.
-    registry.push({
-      id: 'UninstallDisplayName',
-      root: 'HKMU',
-      name: 'DisplayName',
-      key: uninstallKey,
-      type: 'string',
-      value: '[VisibleProductName]',
-      forceDeleteOnUninstall: 'yes'
-    });
+    // if the MSI will be bundled via Burn with other MSI, do not make an individual entry for it
+    if(!this.bundled) {
+      registry.push({
+        id: 'UninstallDisplayName',
+        root: 'HKMU',
+        name: 'DisplayName',
+        key: uninstallKey,
+        type: 'string',
+        value: '[VisibleProductName]',
+        forceDeleteOnUninstall: 'yes'
+      });
+    }
 
     registry.push({
       id: 'UninstallPublisher',

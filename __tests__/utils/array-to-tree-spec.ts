@@ -139,12 +139,18 @@ beforeAll(() => {
   console.log('');
   process.env.TEMP = process.platform === 'win32' ? 'C:\\tmp' : '/tmp';
   getMockFileSystem();
+});
+
+beforeEach(() => {    
   mockFs(getMockFileSystem());
 });
 
 afterAll(() => {
-  mockFs.restore();
   process.env.TEMP = originalTmp;
+});
+
+afterEach(() => {
+  mockFs.restore();
 });
 
 test(`isChild() returns true for a child and parent`, () => {

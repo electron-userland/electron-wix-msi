@@ -38,7 +38,11 @@ npm i --save-dev @evoleap/electron-wix-msi
 ## Whats new?
 Version 3 is a major release for this toolkit. Many internals were reworked and V3 
 delivers improvements listed below. Please look out for the **🆕 icon throughout this
-documentation for new parameter.
+documentation for new parameter. Versions 4 and above are only adding features
+and requiring newer versions of Node.js without actually requiring any code changes on
+your part.
+
+See the CHANGELOG.md for details.
 
 ### New install folder structure
 A new folder structure allows to update the MSI installation while your app is running
@@ -174,6 +178,7 @@ detailed configuration of the UI. It has the following optional properties:
 * `chooseDirectory` (boolean, optional) - If set to `true`, the end user will be
   able to choose the installation directory. Set to `false` by default. Without
   effect if a custom `template` is used.
+* `localizations` (string[], optional) - Provide an array of paths to `.wxl` files containing the localizations.
 * `images` (Optional) - Overwrites default installer images with custom files. I
   recommend JPG.
   * `background` - (optional, string) 493 x 312 Background bitmap used on the
