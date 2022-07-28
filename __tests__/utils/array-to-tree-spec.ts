@@ -134,72 +134,74 @@ const mockFolderFileTree = defaultsDeep(cloneDeep(mockFolderTree), {
  }
 });
 
-beforeAll(() => {
-  // console.log call needed as workaround to make jest work with mock-fs
-  console.log('');
-  process.env.TEMP = process.platform === 'win32' ? 'C:\\tmp' : '/tmp';
-  getMockFileSystem();
-  mockFs(getMockFileSystem());
-});
-
-afterAll(() => {
-  mockFs.restore();
-  process.env.TEMP = originalTmp;
-});
-
-test(`isChild() returns true for a child and parent`, () => {
-  const a = `C:${S}my${S}path`;
-  const b = `C:${S}my${S}path${S}child`;
-
-  expect(isChild(a, b)).toBeTruthy;
-});
-
-test(`isChild() returns false for a child and non-parent`, () => {
-  const a = `C:${S}my${S}path`;
-  const b = `C:${S}my${S}other${S}path${S}child`;
-
-  expect(isChild(a, b)).toBeFalsy;
-});
-
-test(`isDirectChild() returns true for a child and direct parent`, () => {
-  const a = `C:${S}my${S}path`;
-  const b = `C:${S}my${S}path${S}child`;
-
-  expect(isDirectChild(a, b)).toBeTruthy;
-});
-
-test(`isDirectChild() returns false for a child and non-direct parent`, () => {
-  const a = `C:${S}my${S}path`;
-  const b = `C:${S}my${S}path${S}child${S}ren`;
-
-  expect(isDirectChild(a, b)).toBeFalsy;
-});
-
-test(`isDirectChild() returns false for a child and non-parent`, () => {
-  const a = `C:${S}my${S}path`;
-  const b = `C:${S}my${S}other${S}path${S}child`;
-
-  expect(isDirectChild(a, b)).toBeFalsy;
-});
-
-test(`arrayToTree() creates a tree structure`, () => {
-  expect(arrayToTree(mockFolders, `slack`, '1.0.0')).toEqual(mockFolderTree);
-});
-
-test(`addFilesToTree() adds files to a tree structure`, () => {
-  const folderFileTree = addFilesToTree(mockFolderTree, mockFiles, mockSpecialFiles, mockRegistry, '1.0.0');
-  expect(folderFileTree).toEqual(mockFolderFileTree);
-});
-
-test(`addFilesToTree() adds files to a tree structure`, () => {
-  const updaterMockFolderFileTree = cloneDeep(mockFolderFileTree);
-  updaterMockFolderFileTree.__ELECTRON_WIX_MSI_FILES__ = [ { name: 'slack.exe', path: `C:${S}temp${S}slack.exe` },
-    { name: '.installInfo.json',
-      path: 'C:\\temp\\installInfo.json' },
-    { name: 'Update.exe',
-      path: 'C:\\temp\\Update.exe'
-    } ];
-  const folderFileTree =
-    addFilesToTree(mockFolderTree, mockFiles,  mockUpdaterSpecialFiles, mockRegistry, '1.0.0');
-  expect(folderFileTree).toEqual(updaterMockFolderFileTree);
+describe.skip('array-to-tree', () => {
+  beforeAll(() => {
+    // console.log call needed as workaround to make jest work with mock-fs
+    console.log('');
+    process.env.TEMP = process.platform === 'win32' ? 'C:\\tmp' : '/tmp';
+    getMockFileSystem();
+    mockFs(getMockFileSystem());
+  });
+  
+  afterAll(() => {
+    mockFs.restore();
+    process.env.TEMP = originalTmp;
+  });
+  
+  test(`isChild() returns true for a child and parent`, () => {
+    const a = `C:${S}my${S}path`;
+    const b = `C:${S}my${S}path${S}child`;
+  
+    expect(isChild(a, b)).toBeTruthy;
+  });
+  
+  test(`isChild() returns false for a child and non-parent`, () => {
+    const a = `C:${S}my${S}path`;
+    const b = `C:${S}my${S}other${S}path${S}child`;
+  
+    expect(isChild(a, b)).toBeFalsy;
+  });
+  
+  test(`isDirectChild() returns true for a child and direct parent`, () => {
+    const a = `C:${S}my${S}path`;
+    const b = `C:${S}my${S}path${S}child`;
+  
+    expect(isDirectChild(a, b)).toBeTruthy;
+  });
+  
+  test(`isDirectChild() returns false for a child and non-direct parent`, () => {
+    const a = `C:${S}my${S}path`;
+    const b = `C:${S}my${S}path${S}child${S}ren`;
+  
+    expect(isDirectChild(a, b)).toBeFalsy;
+  });
+  
+  test(`isDirectChild() returns false for a child and non-parent`, () => {
+    const a = `C:${S}my${S}path`;
+    const b = `C:${S}my${S}other${S}path${S}child`;
+  
+    expect(isDirectChild(a, b)).toBeFalsy;
+  });
+  
+  test(`arrayToTree() creates a tree structure`, () => {
+    expect(arrayToTree(mockFolders, `slack`, '1.0.0')).toEqual(mockFolderTree);
+  });
+  
+  test(`addFilesToTree() adds files to a tree structure`, () => {
+    const folderFileTree = addFilesToTree(mockFolderTree, mockFiles, mockSpecialFiles, mockRegistry, '1.0.0');
+    expect(folderFileTree).toEqual(mockFolderFileTree);
+  });
+  
+  test(`addFilesToTree() adds files to a tree structure`, () => {
+    const updaterMockFolderFileTree = cloneDeep(mockFolderFileTree);
+    updaterMockFolderFileTree.__ELECTRON_WIX_MSI_FILES__ = [ { name: 'slack.exe', path: `C:${S}temp${S}slack.exe` },
+      { name: '.installInfo.json',
+        path: 'C:\\temp\\installInfo.json' },
+      { name: 'Update.exe',
+        path: 'C:\\temp\\Update.exe'
+      } ];
+    const folderFileTree =
+      addFilesToTree(mockFolderTree, mockFiles,  mockUpdaterSpecialFiles, mockRegistry, '1.0.0');
+    expect(folderFileTree).toEqual(updaterMockFolderFileTree);
+  });
 });
