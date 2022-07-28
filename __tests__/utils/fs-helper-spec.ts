@@ -20,33 +20,37 @@ const tests = [
   { case: '3', TEMP: undefined, TMPDIR: undefined, platform: 'darwin', regex: `\\${S}tmp\\${S}hello.*\.exe` },
 ];
 
-describe.skip('fs-helper', () => {
-  beforeAll(() => {
-    // console.log call needed as workaround to make jest work with mock-fs
-    console.log('');
-    getMockFileSystem();
-    mockFs(getMockFileSystem());
-  });
+beforeAll(() => {
+  // console.log call needed as workaround to make jest work with mock-fs
+  console.log('');
+});
 
-  afterAll(() => {
-      mockFs.restore();
-      process.env.TEMP = originalTmp;
-    });
+beforeEach(() => {
+  getMockFileSystem();
+  mockFs(getMockFileSystem());
+});
 
-  tests.forEach((config) => {
-    it(`gets a temp file path (case:${config.case})`, () => {
-      overridePlatform(config.platform);
-      if (config.TEMP) { process.env.TEMP = config.TEMP; } else { delete process.env.TEMP; }
-      if (config.TMPDIR) { process.env.TMPDIR = config.TMPDIR; } else { delete process.env.TMPDIR; }
-      const S2 = process.platform === 'win32' ? '\\' : '/';
-      mkdtempSyncMock.mockReturnValueOnce(getTempPath() + `${S2}helloXXXX`);
+afterAll(() => {
+  process.env.TEMP = originalTmp;
+});
 
-      const { tempFolderPath, tempFilePath } = getTempFilePath('hello', 'exe');
+afterEach(() => {
+    mockFs.restore();
+});
 
-      expect(tempFilePath.startsWith(tempFolderPath)).toBeTruthy();
-      const rx = new RegExp(config.regex);
-      expect(rx.test(tempFilePath)).toBeTruthy();
-      resetPlatform();
-    });
+tests.forEach((config) => {
+  it(`gets a temp file path (case:${config.case})`, () => {
+    overridePlatform(config.platform);
+    if (config.TEMP) { process.env.TEMP = config.TEMP; } else { delete process.env.TEMP; }
+    if (config.TMPDIR) { process.env.TMPDIR = config.TMPDIR; } else { delete process.env.TMPDIR; }
+    const S2 = process.platform === 'win32' ? '\\' : '/';
+    mkdtempSyncMock.mockReturnValueOnce(getTempPath() + `${S2}helloXXXX`);
+
+    const { tempFolderPath, tempFilePath } = getTempFilePath('hello', 'exe');
+
+    expect(tempFilePath.startsWith(tempFolderPath)).toBeTruthy();
+    const rx = new RegExp(config.regex);
+    expect(rx.test(tempFilePath)).toBeTruthy();
+    resetPlatform();
   });
 });
