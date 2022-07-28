@@ -102,27 +102,14 @@ describe.skip('rc-edit', () => {
       });    
     });
     
-    test('uses an explicitly provided app icon for the stub exe', async () => {
-      overridePlatform('win32');
-      rcinfoMock.mockImplementation((_, callback) => {
-        callback(null, {
-          CompanyName: 'acme corp',
-          FileDescription: 'a test',
-          LegalCopyright: '2021@acme corp',
-          ProductName: 'acme',
-          FileVersion: '1.2.3',
-          ProductVersion: '1.2.3'
-        });
-      });
     
-      const expectedFileInfo = {
-        ...acmeFileInfo,
-        icon: 'C:\\temp\\nice.ico'
-      };
-    
-      await createStubExe(process.env.TEMP!, 'acme', 'bat-app', 'Wayne Enterprise', 'I am Batman', '3.3.3', 'C:\\temp\\nice.ico');
-      expect(rceditMock).toBeCalledWith(expect.stringMatching(acmeExeRegex), expectedFileInfo);
-    });
+    const expectedFileInfo = {
+      ...acmeFileInfo,
+      icon: 'C:\\temp\\nice.ico'
+    };
+  
+    await createStubExe(process.env.TEMP!, 'acme', 'bat-app', 'Wayne Enterprise', 'I am Batman', '3.3.3', 'C:\\temp\\nice.ico');
+    expect(rceditMock).toBeCalledWith(expect.stringMatching(acmeExeRegex), expectedFileInfo);
     
     test('it users no icon if extraction fails and no explicit one is provided', async () => {
       overridePlatform('win32');
