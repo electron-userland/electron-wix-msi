@@ -99,22 +99,7 @@ describe.skip('rc-edit', () => {
         ProductName: 'acme',
         FileVersion: '1.2.3',
         ProductVersion: '1.2.3'
-      });
-    
-      const wayneOptions = { 'version-string':
-      { CompanyName: 'Wayne Enterprise',
-        FileDescription: 'I am Batman',
-        LegalCopyright: '2021@Wayne Enterprise',
-        ProductName: 'bat-app' },
-      'file-version': '3.3.3',
-      'product-version': '3.3.3',
-      icon: expect.stringMatching(acmeIconRegex) };
-    
-      await createStubExe(process.env.TEMP!, 'acme', 'bat-app', 'Wayne Enterprise', 'I am Batman', '3.3.3');
-      expect(rcinfoMock).toBeCalledTimes(1);
-      expect(rcinfoMock).toThrow();
-      expect(rceditMock).toBeCalledTimes(1);
-      expect(rceditMock).toBeCalledWith(expect.stringMatching(acmeExeRegex), wayneOptions);
+      });    
     });
     
     test('uses an explicitly provided app icon for the stub exe', async () => {
