@@ -118,7 +118,7 @@ await msiCreator.compile();
 * `description` (string) - The app's description.
 * `version` (string) - The app's version.
 * `name` (string) - The app's name.
-* `appIconPath` 🆕 (string, optional) - A path to the Apps icon used for the stub executable.
+* `icon` 🆕 (string, optional) - A path to the Apps icon used for the stub executable.
    If not provided a lower quality version will be extracted form the `exe`
 * `manufacturer` (string) - Name of the manufacturer.
 

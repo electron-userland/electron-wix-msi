@@ -10,7 +10,7 @@ export const defaultMsiOptions: MSICreatorOptions = {
   exe: 'HelloWix.exe',
   manufacturer: 'Wix Technologies',
   name: 'HelloWix',
-  appIconPath: path.join(HARNESS_APP_DIR, '../HelloWix.ico'),
+  icon: path.join(HARNESS_APP_DIR, '../HelloWix.ico'),
   outputDirectory: OUT_DIR,
   description: 'A hello wix package',
   ui: {

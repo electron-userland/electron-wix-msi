@@ -37,7 +37,7 @@ export interface MSICreatorOptions {
   toastActivatorClsid?: string;
   description: string;
   exe: string;
-  appIconPath?: string;
+  icon?: string;
   extensions?: Array<string>;
   lightSwitches?: Array<string>;
   cultures?: string;
@@ -115,7 +115,7 @@ export class MSICreator {
   public toastActivatorClsid?: string;
   public description: string;
   public exe: string;
-  public iconPath?: string;
+  public icon?: string;
   public extensions: Array<string>;
   public lightSwitches: Array<string>;
   public cultures?: string;
@@ -159,7 +159,7 @@ export class MSICreator {
     this.certificatePassword = options.certificatePassword;
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, '');
-    this.iconPath = options.appIconPath;
+    this.icon = options.icon;
     this.extensions = options.extensions || [];
     this.lightSwitches = options.lightSwitches || [];
     this.cultures = options.cultures;
@@ -676,7 +676,7 @@ export class MSICreator {
       this.manufacturer,
       this.description,
       this.windowsCompliantVersion,
-      this.iconPath);
+      this.icon);
 
     const installInfoFile = createInstallInfoFile(this.manufacturer,
                                                   this.shortName,
