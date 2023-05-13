@@ -41,6 +41,7 @@ export interface MSICreatorOptions {
   extensions?: Array<string>;
   lightSwitches?: Array<string>;
   cultures?: string;
+  codepage?:string;
   language?: number;
   manufacturer: string;
   name: string;
@@ -119,6 +120,7 @@ export class MSICreator {
   public extensions: Array<string>;
   public lightSwitches: Array<string>;
   public cultures?: string;
+  public codepage: string;
   public language: number;
   public manufacturer: string;
   public name: string;
@@ -163,6 +165,7 @@ export class MSICreator {
     this.extensions = options.extensions || [];
     this.lightSwitches = options.lightSwitches || [];
     this.cultures = options.cultures;
+    this.codepage = options.codepage || '1252';
     this.language = options.language || 1033;
     this.manufacturer = options.manufacturer;
     this.name = options.name;
@@ -303,6 +306,7 @@ export class MSICreator {
       '{{ApplicationShortcutGuid}}': uuid(),
       '{{ApplicationShortName}}': this.shortName,
       '{{AppUserModelId}}': this.appUserModelId,
+      '{{Codepage}}': this.codepage,
       '{{Language}}': this.language.toString(10),
       '{{Manufacturer}}': this.manufacturer,
       '{{ShortcutFolderName}}': this.shortcutFolderName,

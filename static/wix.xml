@@ -6,6 +6,7 @@
            Name = "{{ApplicationName}} (Machine - MSI)"
            Version="{{Version}}"
            Manufacturer="{{Manufacturer}}"
+           Codepage="{{Codepage}}"
            Language="{{Language}}">
     <!-- Only run this installer on Windows 7 or up (or if it"s already installed, I guess) -->
     <!-- <Condition Message="This application is only supported on Windows 7 or higher.">
