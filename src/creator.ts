@@ -193,6 +193,7 @@ export class MSICreator {
     this.ui = options.ui !== undefined ? options.ui : false;
     this.autoUpdate = false;
     this.autoLaunch = false;
+    this.autoRun = options.autoRun || false; 
     this.autoLaunchArgs = [];
     if (typeof options.features === 'object' && options.features !== null) {
       this.autoUpdate = options.features.autoUpdate;
