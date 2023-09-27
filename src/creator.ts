@@ -58,6 +58,7 @@ export interface MSICreatorOptions {
   certificatePassword?: string;
   arch?: 'x64' | 'ia64'| 'x86';
   features?: Features | false;
+  autoRun?: boolean;
   defaultInstallMode?: 'perUser' | 'perMachine';
   rebootMode?: string;
   installLevel?: number;
@@ -105,6 +106,7 @@ export class MSICreator {
   public updaterPermissions = getTemplate('updater-permissions');
   public autoLaunchTemplate = getTemplate('auto-launch-feature', true);
   public shortcutPropertyTemplate = getTemplate('shortcut-property', true);
+  public autoRunTemplate = getTemplate('auto-run',true);
 
   // State, overwritable beteween steps
   public wxsFile: string = '';
@@ -138,6 +140,7 @@ export class MSICreator {
   public autoUpdate: boolean;
   public autoLaunch: boolean;
   public autoLaunchArgs: Array<string>;
+  public autoRun?: boolean; 
   public defaultInstallMode: 'perUser' | 'perMachine';
   public productCode: string;
   public rebootMode: string;
@@ -292,6 +295,7 @@ export class MSICreator {
       '<!-- {{AutoLaunchFeature}} -->': this.autoLaunch ? this.autoLaunchTemplate : '{{remove newline}}',
       '<!-- {{UpdaterComponentRefs}} -->': updaterComponentRefs.map(({ xml }) => xml).join('\n'),
       '<!-- {{AutoLaunchComponentRefs}} -->': autoLaunchComponentRefs.map(({ xml }) => xml).join('\n'),
+      '<!-- {{AutoRun}} -->': this.autoRun ? this.autoRunTemplate : '{{remove newline}}',
       '<!-- {{ShortcutProperties}} -->': shortcutProperties.map(({key, value}) =>
         this.getShortcutProperty(key, value)).join('\n'),
     };
