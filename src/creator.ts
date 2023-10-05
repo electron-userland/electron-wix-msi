@@ -781,7 +781,7 @@ export class MSICreator {
       name: 'DisplayIcon',
       key: uninstallKey,
       type: 'expandable',
-      value: this.arch === 'x86' ? '[SystemFolder]msiexec.exe' : '[System64Folder]msiexec.exe',
+      value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe',
       forceDeleteOnUninstall: 'yes'
     });
 
