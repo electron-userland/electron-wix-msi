@@ -67,6 +67,16 @@
                       Name="InstallPath"
                       Win64="{{Win64YesNo}}"/>
     </Property>
+
+    <!-- Cache do app em %APPDATA%  -->
+    <Property Id="APPDATAPATH">
+      <RegistrySearch Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{{{ProductCode}}}.msq"
+                      Root="HKCU" 
+                      Type="raw"
+                      Id="AppDataPathRegSearch"
+                      Name="CachePath"/>
+    </Property>
+
     <!-- Lets change the product name depending on the perUser installMode. 
     This way the user and admins can see in which scope the MSI was installed. -->
     <SetProperty Action="SetVisibleProductName" Id="VisibleProductName" Sequence="both" Before="AppSearch"  Value="{{ApplicationName}} (User)">
@@ -96,6 +106,13 @@
       <Directory Id="ProgramMenuFolder">
         <Directory Id="ApplicationProgramsFolder" Name="{{ShortcutFolderName}}"/>
       </Directory>
+
+      <!-- Remover ApData Cache/Dados do usuario do %APPDATA% -->
+      <Component Id="AppDataUninstall">
+         <RegistryValue Root="HKCU" Key="SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{ProductCode}}}.msq" Name="CachePath" Type="string" Value="[AppDataFolder]{{ApplicationShortName}}" KeyPath="yes" />
+        <util:RemoveFolderEx On="uninstall" Property="APPDATAPATH"/>
+      </Component>
+
     </Directory>
 
     <!-- Step 3: Add app to Start Menu -->
@@ -145,6 +162,7 @@
         <util:RemoveFolderEx On="uninstall" Property="INSTALLPATH" />
       </Component>
     </DirectoryRef>
+    
 
     <Feature Id="Complete" Title="{{ApplicationName}} ({{SemanticVersion}})" Description="The complete package." Display="expand" Level="1" {{ConfigurableDirectory}}>
       <!-- Step 5: Tell WiX to install the files -->
@@ -153,6 +171,7 @@
         <ComponentRef Id="ApplicationShortcut" />
         <ComponentRef Id="DesktopShortcut" />
         <ComponentRef Id="PurgeOnUninstall" />
+        <ComponentRef Id="AppDataUninstall" />
       </Feature> 
 <!-- {{AutoLaunchFeature}} -->
 <!-- {{AutoUpdateFeature}} -->
