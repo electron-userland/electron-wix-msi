@@ -23,6 +23,7 @@
     "harness": "npm run build && node ./harness/harness.js"
   },
   "dependencies": {
+    "@electron/windows-sign": "^1.1.2",
     "debug": "^4.3.4",
     "fs-extra": "^10.0.1",
     "klaw": "^4.0.1",
