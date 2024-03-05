@@ -143,12 +143,6 @@ await msiCreator.compile();
   [Microsoft Windows Language Code identifier](https://msdn.microsoft.com/en-us/library/cc233965.aspx)
   used by the installer. Will use 1033 (English, United-States) if left
   undefined.
-* `certificateFile` (string, optional) - The path to an Authenticode Code
-  Signing Certificate.
-* `certificatePassword` (string, optional) - The password to decrypt the
-  certificate given in `certificateFile`.
-* `signWithParams` (string, optional) - Parameters to pass to `signtool.exe`.
-  Overrides `certificateFile` and `certificatePassword`.
 * `extensions` (array, optional) - Specify WiX extensions to use e.g `['WixUtilExtension', 'C:\My WiX Extensions\FooExtension.dll']`
 * `lightSwitches` (array, optional) - Specify command line options to pass to light.exe e.g. `['-sval', '-ai']`
   Used to activate `PropertyGroup` options as specified in the [Light Task](https://wixtoolset.org/documentation/manual/v3/msbuild/task_reference/light.html) documentation. 
@@ -163,6 +157,14 @@ await msiCreator.compile();
     install feature
   * `autoLaunch` (boolean) - indicates whether the launch on login is available as an
     install feature
+* `windowsSign` - Configuration options to sign the resulting `.msi` file. Accepts all
+   [`@electron/windows-sign`][] options.
+* `certificateFile` (string, optional, deprecated) - The path to an Authenticode Code
+  Signing Certificate. Use `windowsSign` instead.
+* `certificatePassword` (string, optional, deprecated) - The password to decrypt the
+  certificate given in `certificateFile`. Use `windowsSign` instead.
+* `signWithParams` (string, optional, deprecated) - Parameters to pass to `signtool.exe`.
+  Overrides `certificateFile` and `certificatePassword`. Use `windowsSign` instead.
 
 ##### UI Configuration (Optional)
 
@@ -215,3 +217,6 @@ default XML. The available fields on the class are:
 ## License
 
 MIT, please see LICENSE.md for details.
+
+
+[`@electron/windows-sign`]: https://github.com/electron/windows-sign

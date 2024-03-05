@@ -1,10 +1,10 @@
-import expect from 'expect.js';
-import * as fs from 'fs-extra';
-import hasha from 'hasha';
-import path from 'path';
+import expect from "expect.js";
+import * as fs from "fs-extra";
+import hasha from "hasha";
+import path from "path";
 
 export const expectSameFolderContent = (folderA: string, folderB: string) => {
-  const folderContent =  fs.readdirSync(folderA);
+  const folderContent = fs.readdirSync(folderA);
 
   folderContent.forEach(async (item) => {
     const itemPathA = path.join(folderA, item);

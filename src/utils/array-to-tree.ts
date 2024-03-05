@@ -1,8 +1,8 @@
-import { cloneDeep } from 'lodash';
-import * as path from 'path';
+import { cloneDeep } from "lodash";
+import * as path from "path";
 
-import { File, FileFolderTree, Registry } from '../interfaces';
-import { separator } from './separator';
+import { File, FileFolderTree, Registry } from "../interfaces";
+import { separator } from "./separator";
 
 /**
  * Are two paths in a direct parent/child relationship?
@@ -25,12 +25,14 @@ import { separator } from './separator';
  * @returns {boolean}
  */
 export function isDirectChild(parent: string, possibleChild: string): boolean {
-  if (!isChild(parent, possibleChild)) { return false; }
+  if (!isChild(parent, possibleChild)) {
+    return false;
+  }
 
   const parentSplit = parent.split(separator);
   const childSplit = possibleChild.split(separator);
 
-  return (parentSplit.length === childSplit.length - 1);
+  return parentSplit.length === childSplit.length - 1;
 }
 
 /**
@@ -53,7 +55,10 @@ export function isDirectChild(parent: string, possibleChild: string): boolean {
  * @returns {boolean}
  */
 export function isChild(parent: string, possibleChild: string): boolean {
-  return possibleChild.startsWith(`${parent}${separator}`) && parent !== possibleChild;
+  return (
+    possibleChild.startsWith(`${parent}${separator}`) &&
+    parent !== possibleChild
+  );
 }
 
 /**
@@ -87,27 +92,34 @@ export function isChild(parent: string, possibleChild: string): boolean {
  * @param {string} [inputRoot]
  * @returns {FileFolderTree}
  */
-export function arrayToTree(input: Array<string>, root: string, appVersion?: string ): FileFolderTree {
+export function arrayToTree(
+  input: Array<string>,
+  root: string,
+  appVersion?: string,
+): FileFolderTree {
   const output: FileFolderTree = {
     __ELECTRON_WIX_MSI_FILES__: [],
     __ELECTRON_WIX_MSI_REGISTRY__: [],
     __ELECTRON_WIX_MSI_PATH__: root,
-    __ELECTRON_WIX_MSI_DIR_NAME__: path.basename(root)
-   };
+    __ELECTRON_WIX_MSI_DIR_NAME__: path.basename(root),
+  };
 
   let entryPoint = output;
   if (appVersion) {
-    const versionNode  = {
+    const versionNode = {
       __ELECTRON_WIX_MSI_FILES__: [],
       __ELECTRON_WIX_MSI_REGISTRY__: [],
       __ELECTRON_WIX_MSI_PATH__: root,
-      __ELECTRON_WIX_MSI_DIR_NAME__: `app-${appVersion}` };
+      __ELECTRON_WIX_MSI_DIR_NAME__: `app-${appVersion}`,
+    };
     output[`app-${appVersion}`] = versionNode;
     entryPoint = versionNode;
   }
 
   const children: Array<string> = input.filter((e) => isChild(root, e));
-  const directChildren: Array<string> = children.filter((e) => isDirectChild(root, e));
+  const directChildren: Array<string> = children.filter((e) =>
+    isDirectChild(root, e),
+  );
 
   directChildren.forEach((directChild) => {
     entryPoint[path.basename(directChild)] = arrayToTree(children, directChild);
@@ -154,12 +166,13 @@ export function arrayToTree(input: Array<string>, root: string, appVersion?: str
  * @param {string} root
  * @returns {FileFolderTree}
  */
-export function addFilesToTree( tree: FileFolderTree,
-                                files: Array<string>,
-                                specialFiles: Array<File>,
-                                registry: Array<Registry>,
-                                appVersion: string,
-                                ): FileFolderTree {
+export function addFilesToTree(
+  tree: FileFolderTree,
+  files: Array<string>,
+  specialFiles: Array<File>,
+  registry: Array<Registry>,
+  appVersion: string,
+): FileFolderTree {
   const output: FileFolderTree = cloneDeep(tree);
 
   output.__ELECTRON_WIX_MSI_REGISTRY__ = registry;

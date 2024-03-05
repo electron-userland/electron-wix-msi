@@ -1,8 +1,8 @@
-import path from 'path';
-import { spawnPromise } from 'spawn-rx';
+import path from "path";
+import { spawnPromise } from "spawn-rx";
 
 const readShortcut = async (lnkPath: string) => {
-  const lnkspector = path.join(__dirname, '../../src/utils/bin/Lnkspector.exe');
+  const lnkspector = path.join(__dirname, "../../src/utils/bin/Lnkspector.exe");
   const json = await spawnPromise(lnkspector, [lnkPath]);
   return JSON.parse(json);
 };
