@@ -9,7 +9,7 @@ export interface HasBinaryResult {
  * @returns {HasBinaryResult}
  */
 export function hasCandle(): HasBinaryResult {
-  return hasBinary('candle -?');
+  return hasBinary("candle -?");
 }
 
 /**
@@ -18,7 +18,7 @@ export function hasCandle(): HasBinaryResult {
  * @returns {HasBinaryResult}
  */
 export function hasLight(): HasBinaryResult {
-  return hasBinary('light -?');
+  return hasBinary("light -?");
 }
 
 /**
@@ -29,7 +29,7 @@ export function hasLight(): HasBinaryResult {
  */
 export function hasBinary(cmd: string): HasBinaryResult {
   try {
-    const { execSync } = require('child_process');
+    const { execSync } = require("child_process");
     const help = execSync(cmd).toString();
     const version = findVersion(help);
 

@@ -157,5 +157,6 @@
 <!-- {{AutoLaunchFeature}} -->
 <!-- {{AutoUpdateFeature}} -->
     </Feature> 
+<!-- {{AutoRun}} -->
   </Product>
 </Wix>

@@ -1,57 +1,78 @@
-import expect from 'expect.js';
-import * as fs from 'fs-extra';
-import path from 'path';
+import expect from "expect.js";
+import * as fs from "fs-extra";
+import path from "path";
 
-import { getWindowsCompliantVersion } from '../../lib/utils/version-util';
-import { expectSameFolderContent } from './common';
-import { getProcessPath, kill, launch, runs } from './utils/app-process';
-import { checkInstall, getInstallPaths, install, uninstall, uninstallViaPowershell } from './utils/installer';
-import { createMsiPackage, defaultMsiOptions, HARNESS_APP_DIR, OUT_DIR } from './utils/msi-packager';
-import { getRegistryKeyValue } from './utils/registry';
-import { sleep } from './utils/util';
+import { getWindowsCompliantVersion } from "../../lib/utils/version-util";
+import { expectSameFolderContent } from "./common";
+import { getProcessPath, kill, launch, runs } from "./utils/app-process";
+import {
+  checkInstall,
+  getInstallPaths,
+  install,
+  uninstall,
+  uninstallViaPowershell,
+} from "./utils/installer";
+import {
+  createMsiPackage,
+  defaultMsiOptions,
+  HARNESS_APP_DIR,
+  OUT_DIR,
+} from "./utils/msi-packager";
+import { getRegistryKeyValue } from "./utils/registry";
+import { sleep } from "./utils/util";
 
 interface TestConfig {
-  arch: 'x86' | 'x64';
-  defaultInstallMode: 'perUser' | 'perMachine';
+  arch: "x86" | "x64";
+  defaultInstallMode: "perUser" | "perMachine";
 }
 
 interface InstallConfig {
-  installMode?: 'perUser' | 'perMachine';
-  effectiveMode: 'perUser' | 'perMachine';
+  installMode?: "perUser" | "perMachine";
+  effectiveMode: "perUser" | "perMachine";
 }
 
-const msiPath = path.join(OUT_DIR, 'HelloWix.msi');
+const msiPath = path.join(OUT_DIR, "HelloWix.msi");
 const autoLaunchMsiOptions = {
   ...defaultMsiOptions,
   features: {
     autoUpdate: false,
-    autoLaunch: true
-  }
+    autoLaunch: true,
+  },
 };
 
 // did break with https://github.com/electron-userland/electron-wix-msi/pull/138
-describe.skip('MSI perUser install', () => {
+describe.skip("MSI perUser install", () => {
   before(async () => {
     if (await checkInstall(`${defaultMsiOptions.name} (Machine - MSI)`)) {
       await uninstallViaPowershell(`${defaultMsiOptions.name} (Machine - MSI)`);
     }
-    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}).appRootFolder, { recursive: true });
-    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x86'}, 'perUser').appRootFolder, { recursive: true });
-    fs.rmdirSync(getInstallPaths({ ...defaultMsiOptions, arch: 'x64'}).appRootFolder, { recursive: true });
+    fs.rmdirSync(
+      getInstallPaths({ ...defaultMsiOptions, arch: "x86" }).appRootFolder,
+      { recursive: true },
+    );
+    fs.rmdirSync(
+      getInstallPaths({ ...defaultMsiOptions, arch: "x86" }, "perUser")
+        .appRootFolder,
+      { recursive: true },
+    );
+    fs.rmdirSync(
+      getInstallPaths({ ...defaultMsiOptions, arch: "x64" }).appRootFolder,
+      { recursive: true },
+    );
   });
 
   const testConfigs: TestConfig[] = [
-    {arch: 'x86', defaultInstallMode: 'perUser'},
-    {arch: 'x86', defaultInstallMode: 'perMachine'},
-    {arch: 'x64', defaultInstallMode: 'perUser'},
-    {arch: 'x64', defaultInstallMode: 'perMachine'},
+    { arch: "x86", defaultInstallMode: "perUser" },
+    { arch: "x86", defaultInstallMode: "perMachine" },
+    { arch: "x64", defaultInstallMode: "perUser" },
+    { arch: "x64", defaultInstallMode: "perMachine" },
   ];
 
   testConfigs.forEach((testConfig) => {
-    describe((`arch:${testConfig.arch}, defaultInstallMode:${testConfig.defaultInstallMode}`), () => {
+    describe(`arch:${testConfig.arch}, defaultInstallMode:${testConfig.defaultInstallMode}`, () => {
       const msiOptions = {
         ...autoLaunchMsiOptions,
-        ...testConfig
+        ...testConfig,
       };
 
       it(`packages (${testConfig.arch})`, async () => {
@@ -59,23 +80,43 @@ describe.skip('MSI perUser install', () => {
       });
 
       const installConfigs: InstallConfig[] = [
-        { installMode: undefined, effectiveMode: testConfig.defaultInstallMode },
-        { installMode: 'perUser', effectiveMode: 'perUser' },
-        { installMode: 'perMachine', effectiveMode: 'perMachine' },
+        {
+          installMode: undefined,
+          effectiveMode: testConfig.defaultInstallMode,
+        },
+        { installMode: "perUser", effectiveMode: "perUser" },
+        { installMode: "perMachine", effectiveMode: "perMachine" },
       ];
 
       installConfigs.forEach((installConfig) => {
-        describe((`installMode:${installConfig.installMode !== undefined ?
-          installConfig.installMode : 'default' }`), () => {
-          let autoLaunchRegistryKeyValue = '';
-          const msiPaths123beta = getInstallPaths(msiOptions, installConfig.effectiveMode);
+        describe(`installMode:${
+          installConfig.installMode !== undefined
+            ? installConfig.installMode
+            : "default"
+        }`, () => {
+          let autoLaunchRegistryKeyValue = "";
+          const msiPaths123beta = getInstallPaths(
+            msiOptions,
+            installConfig.effectiveMode,
+          );
 
           it(`installs (${testConfig.arch})`, async () => {
             await install(msiPath, 2, undefined, installConfig.installMode);
             const version = getWindowsCompliantVersion(msiOptions.version);
-            const nameSuffix = installConfig.effectiveMode  === 'perUser' ? 'User' : 'Machine';
-            expect(await checkInstall(`${msiOptions.name} (${nameSuffix})`, msiOptions.version)).ok();
-            expect(await checkInstall(`${msiOptions.name} (${nameSuffix} - MSI)`, version)).ok();
+            const nameSuffix =
+              installConfig.effectiveMode === "perUser" ? "User" : "Machine";
+            expect(
+              await checkInstall(
+                `${msiOptions.name} (${nameSuffix})`,
+                msiOptions.version,
+              ),
+            ).ok();
+            expect(
+              await checkInstall(
+                `${msiOptions.name} (${nameSuffix} - MSI)`,
+                version,
+              ),
+            ).ok();
           });
 
           it(`has all files in program files (${testConfig.arch})`, () => {
@@ -90,17 +131,24 @@ describe.skip('MSI perUser install', () => {
           });
 
           it(`has auto-launch registry key (${testConfig.arch})`, async () => {
-            autoLaunchRegistryKeyValue = await getRegistryKeyValue(msiPaths123beta.registryRunKey,
-              msiPaths123beta.appUserModelId);
-            expect(autoLaunchRegistryKeyValue).to.be(`"${msiPaths123beta.stubExe}"`);
+            autoLaunchRegistryKeyValue = await getRegistryKeyValue(
+              msiPaths123beta.registryRunKey,
+              msiPaths123beta.appUserModelId,
+            );
+            expect(autoLaunchRegistryKeyValue).to.be(
+              `"${msiPaths123beta.stubExe}"`,
+            );
             entryPoints[3].path = autoLaunchRegistryKeyValue;
           });
 
           const entryPoints = [
-            { name: 'stubExe', path: msiPaths123beta.stubExe },
-            { name: 'start menu shortcut', path: msiPaths123beta.startMenuShortcut },
-            { name: 'desktop shortcut', path: msiPaths123beta.desktopShortcut },
-            { name: 'auto-launch key', path: autoLaunchRegistryKeyValue },
+            { name: "stubExe", path: msiPaths123beta.stubExe },
+            {
+              name: "start menu shortcut",
+              path: msiPaths123beta.startMenuShortcut,
+            },
+            { name: "desktop shortcut", path: msiPaths123beta.desktopShortcut },
+            { name: "auto-launch key", path: autoLaunchRegistryKeyValue },
           ];
 
           entryPoints.forEach(async (entryPoint) => {
@@ -108,18 +156,27 @@ describe.skip('MSI perUser install', () => {
               await launch(entryPoint.path);
               expect(await runs(msiOptions.exe)).ok();
               await sleep(1000);
-              expect(await getProcessPath(msiOptions.exe)).to.be(msiPaths123beta.appExe);
+              expect(await getProcessPath(msiOptions.exe)).to.be(
+                msiPaths123beta.appExe,
+              );
               await kill(msiOptions.exe);
             });
           });
 
           it(`uninstalls (${testConfig.arch})`, async () => {
             await uninstall(msiPath);
-            const nameSuffix = installConfig.effectiveMode  === 'perUser' ? 'User' : 'Machine';
-            expect(await checkInstall(`${msiOptions.name} (${nameSuffix})`)).not.ok();
-            expect(await checkInstall(`${msiOptions.name} (${nameSuffix} - MSI)`)).not.ok();
+            const nameSuffix =
+              installConfig.effectiveMode === "perUser" ? "User" : "Machine";
+            expect(
+              await checkInstall(`${msiOptions.name} (${nameSuffix})`),
+            ).not.ok();
+            expect(
+              await checkInstall(`${msiOptions.name} (${nameSuffix} - MSI)`),
+            ).not.ok();
             expect(fs.pathExistsSync(msiPaths123beta.appRootFolder)).not.ok();
-            expect(fs.pathExistsSync(msiPaths123beta.startMenuShortcut)).not.ok();
+            expect(
+              fs.pathExistsSync(msiPaths123beta.startMenuShortcut),
+            ).not.ok();
             expect(fs.pathExistsSync(msiPaths123beta.desktopShortcut)).not.ok();
           });
         });
