@@ -1,9 +1,9 @@
-import { SignToolOptions } from '@electron/windows-sign';
+import { SignToolOptions } from "@electron/windows-sign";
 
 // tslint:disable-next-line
-export interface WindowsSignOptions extends SignToolOptions { };
+export interface WindowsSignOptions extends SignToolOptions {}
 
-export type featureAffinity = 'main' | 'autoUpdate' | 'autoLaunch';
+export type featureAffinity = "main" | "autoUpdate" | "autoLaunch";
 
 export interface StringMap<T> {
   [key: string]: T;
@@ -54,18 +54,20 @@ export interface File extends AppElement {
 export interface Registry extends AppElement {
   id: string;
   key: string;
-  root: 'HKLM' | 'HKCU' | 'HKMU' | 'HKCR' | 'HKU';
+  root: "HKLM" | "HKCU" | "HKMU" | "HKCR" | "HKU";
   name: string;
   value: string;
-  type: 'string' | 'integer' | 'binary' | 'expandable' | 'multiString';
-  forceCreateOnInstall?: 'yes' | 'no';
-  forceDeleteOnUninstall?: 'yes' | 'no';
+  type: "string" | "integer" | "binary" | "expandable" | "multiString";
+  forceCreateOnInstall?: "yes" | "no";
+  forceDeleteOnUninstall?: "yes" | "no";
   permission?: {
     user: string;
-    genericAll: 'yes' | 'no';
+    genericAll: "yes" | "no";
   };
 }
 
-export function isFileComponent(comp: Component | FileComponent): comp is FileComponent {
+export function isFileComponent(
+  comp: Component | FileComponent,
+): comp is FileComponent {
   return (comp as FileComponent).file !== undefined;
 }

@@ -1,12 +1,12 @@
-import * as fs from 'fs-extra';
-import * as semver from 'semver';
+import * as fs from "fs-extra";
+import * as semver from "semver";
 
-import { getTempFilePath } from './fs-helper';
+import { getTempFilePath } from "./fs-helper";
 
 function isWindowsCompliant(version: string): boolean {
-  const versionArray = version.split('.');
+  const versionArray = version.split(".");
   if (versionArray.length !== 4) {
-   return false;
+    return false;
   }
 
   for (let i = 0; i < 4; i++) {
@@ -34,16 +34,18 @@ export function getWindowsCompliantVersion(input: string): string {
   if (parsed) {
     return `${parsed.major}.${parsed.minor}.${parsed.patch}.0`;
   } else {
-    throw new Error('Could not parse semantic version input string');
+    throw new Error("Could not parse semantic version input string");
   }
 }
 
-export function createInstallInfoFile(manufacturer: string,
-                                      appName: string,
-                                      productCode: string,
-                                      installVersion: string,
-                                      arch: string): string {
-  const { tempFilePath } = getTempFilePath('.installInfo', 'json');
+export function createInstallInfoFile(
+  manufacturer: string,
+  appName: string,
+  productCode: string,
+  installVersion: string,
+  arch: string,
+): string {
+  const { tempFilePath } = getTempFilePath(".installInfo", "json");
   fs.writeJSONSync(tempFilePath, {
     manufacturer,
     appName,
