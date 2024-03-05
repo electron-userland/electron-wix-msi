@@ -3,15 +3,19 @@ import { flatMap, padStart } from 'lodash';
 import * as path from 'path';
 import { v4 as uuid } from 'uuid';
 import { spawnPromise } from './utils/spawn';
+import { sign } from '@electron/windows-sign'
 
-import { Component,
-         ComponentRef,
-         featureAffinity,
-         File,
-         FileComponent,
-         FileFolderTree,
-         Registry,
-         StringMap } from './interfaces';
+import {
+  Component,
+  ComponentRef,
+  featureAffinity,
+  File,
+  FileComponent,
+  FileFolderTree,
+  Registry,
+  StringMap,
+  WindowsSignOptions
+} from './interfaces';
 import { addFilesToTree, arrayToTree } from './utils/array-to-tree';
 import { hasCandle, hasLight } from './utils/detect-wix';
 import { createStubExe } from './utils/rc-edit';
@@ -53,15 +57,19 @@ export interface MSICreatorOptions {
   ui?: UIOptions | boolean;
   upgradeCode?: string;
   version: string;
-  signWithParams?: string;
-  certificateFile?: string;
-  certificatePassword?: string;
-  arch?: 'x64' | 'ia64'| 'x86';
+  arch?: 'x64' | 'ia64' | 'x86';
   features?: Features | false;
   defaultInstallMode?: 'perUser' | 'perMachine';
   rebootMode?: string;
   installLevel?: number;
   bundled?: boolean;
+  windowsSign?: WindowsSignOptions
+  // Deprecated, use windowsSign instead
+  signWithParams?: string;
+  // Deprecated, use windowsSign instead
+  certificateFile?: string;
+  // Deprecated, use windowsSign instead
+  certificatePassword?: string;
 }
 
 export interface UIOptions {
@@ -131,10 +139,7 @@ export class MSICreator {
   public upgradeCode: string;
   public windowsCompliantVersion: string;
   public semanticVersion: string;
-  public certificateFile?: string;
-  public certificatePassword?: string;
-  public signWithParams?: string;
-  public arch: 'x64' | 'ia64'| 'x86' = 'x86';
+  public arch: 'x64' | 'ia64' | 'x86' = 'x86';
   public autoUpdate: boolean;
   public autoLaunch: boolean;
   public autoLaunchArgs: Array<string>;
@@ -143,6 +148,7 @@ export class MSICreator {
   public rebootMode: string;
   public installLevel: number;
   public bundled: boolean;
+  public windowsSign?: WindowsSignOptions;
 
   public ui: UIOptions | boolean;
 
@@ -155,8 +161,6 @@ export class MSICreator {
 
   constructor(options: MSICreatorOptions) {
     this.appDirectory = path.normalize(options.appDirectory);
-    this.certificateFile = options.certificateFile;
-    this.certificatePassword = options.certificatePassword;
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, '');
     this.icon = options.icon;
@@ -172,7 +176,6 @@ export class MSICreator {
     this.shortName = options.shortName || options.name;
     this.shortcutFolderName = options.shortcutFolderName || options.manufacturer;
     this.shortcutName = options.shortcutName || options.name;
-    this.signWithParams = options.signWithParams;
     this.upgradeCode = options.upgradeCode || uuid();
     this.semanticVersion = options.version;
     this.windowsCompliantVersion = getWindowsCompliantVersion(options.version);
@@ -182,6 +185,11 @@ export class MSICreator {
     this.rebootMode = options.rebootMode || 'ReallySuppress';
     this.installLevel = options.installLevel || 2;
     this.bundled = options.bundled || false;
+    this.windowsSign = options.windowsSign || {
+      signWithParams: options.signWithParams,
+      certificateFile: options.certificateFile,
+      certificatePassword: options.certificatePassword,
+    }
 
     this.appUserModelId = options.appUserModelId
       || `com.squirrel.${this.shortName}.${this.exe}`.toLowerCase();
@@ -275,12 +283,13 @@ export class MSICreator {
       const { chooseDirectory } = this.ui;
       enableChooseDirectory = chooseDirectory || false;
     }
-    const shortcutProperties = [ {key: 'System.AppUserModel.ID', value: this.appUserModelId } ];
+    const shortcutProperties = [{ key: 'System.AppUserModel.ID', value: this.appUserModelId }];
     if (this.toastActivatorClsid) {
       shortcutProperties.push({
         key: 'System.AppUserModel.ToastActivatorCLSID',
         value: this.toastActivatorClsid.match(/^{.*}$/) ?
-          this.toastActivatorClsid  : `{${this.toastActivatorClsid }}` });
+          this.toastActivatorClsid : `{${this.toastActivatorClsid}}`
+      });
     }
 
     const scaffoldReplacements = {
@@ -292,7 +301,7 @@ export class MSICreator {
       '<!-- {{AutoLaunchFeature}} -->': this.autoLaunch ? this.autoLaunchTemplate : '{{remove newline}}',
       '<!-- {{UpdaterComponentRefs}} -->': updaterComponentRefs.map(({ xml }) => xml).join('\n'),
       '<!-- {{AutoLaunchComponentRefs}} -->': autoLaunchComponentRefs.map(({ xml }) => xml).join('\n'),
-      '<!-- {{ShortcutProperties}} -->': shortcutProperties.map(({key, value}) =>
+      '<!-- {{ShortcutProperties}} -->': shortcutProperties.map(({ key, value }) =>
         this.getShortcutProperty(key, value)).join('\n'),
     };
 
@@ -312,8 +321,8 @@ export class MSICreator {
       '{{SemanticVersion}}': this.semanticVersion,
       '{{Platform}}': this.arch,
       '{{ProgramFilesFolder}}': this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
-      '{{ProcessorArchitecture}}' : this.arch,
-      '{{Win64YesNo}}' : this.arch === 'x86' ? 'no' : 'yes',
+      '{{ProcessorArchitecture}}': this.arch,
+      '{{Win64YesNo}}': this.arch === 'x86' ? 'no' : 'yes',
       '{{DesktopShortcutGuid}}': uuid(),
       '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
       '{{PackageScope}}': this.defaultInstallMode,
@@ -376,8 +385,8 @@ export class MSICreator {
     const preArgs = flatMap(this.extensions.map((e) => (['-ext', e])));
 
     if (typeof this.ui === 'object' && this.ui.localizations && this.ui.localizations.length && type === 'msi') {
-       this.ui.localizations.forEach((l) => preArgs.push('-loc', l));
-     }
+      this.ui.localizations.forEach((l) => preArgs.push('-loc', l));
+    }
 
 
     if (type === 'msi' && this.cultures) {
@@ -387,7 +396,7 @@ export class MSICreator {
       this.lightSwitches.forEach((param) => preArgs.unshift(param));
     }
 
-    const { code, stderr, stdout } = await spawnPromise(binary, [ ...preArgs, input ], {
+    const { code, stderr, stdout } = await spawnPromise(binary, [...preArgs, input], {
       env: process.env,
       cwd
     });
@@ -405,30 +414,13 @@ export class MSICreator {
    * @memberof MSICreator
    */
   private async signMSI(msiFile: string) {
-    const { certificatePassword, certificateFile, signWithParams } = this;
-    const signToolPath = path.join(__dirname, '../vendor/signtool.exe');
-
-    if (!certificateFile && !signWithParams) {
-      debug('Signing not necessary, no certificate file or parameters given');
-      return;
-    }
-
-    if (!signWithParams && !certificatePassword) {
-      throw new Error('You must provide a certificatePassword with a certificateFile');
-    }
-
-    const args: Array<string> = signWithParams
-      // Split up at spaces and doublequotes
-      ? signWithParams.match(/(?:[^\s"]+|"[^"]*")+/g) as Array<string>
-      : ['/a', '/f', path.resolve(certificateFile!), '/p', certificatePassword!];
-
-    const { code, stderr, stdout } = await spawnPromise(signToolPath, [ 'sign', ...args, msiFile ], {
-      env: process.env,
-      cwd: path.join(__dirname, '../vendor'),
-    });
-
-    if (code !== 0) {
-      throw new Error(`Signtool exited with code ${code}. Stderr: ${stderr}. Stdout: ${stdout}`);
+    if (this.windowsSign) {
+      return sign({
+        ...this.windowsSign,
+        files: [msiFile],
+      })
+    } else {
+      debug('Signing not necessary, no windowsSign given');
     }
   }
 
@@ -476,9 +468,9 @@ export class MSICreator {
       .map((key) => {
         return variableMap[key]
           ? replaceInString(this.wixVariableTemplate, {
-              '{{Key}}': variableMap[key],
-              '{{Value}}': (images as any)[key]
-            })
+            '{{Key}}': variableMap[key],
+            '{{Value}}': (images as any)[key]
+          })
           : '';
       })
       .join('\n');
@@ -494,10 +486,10 @@ export class MSICreator {
    * @returns {string}
    */
   private getDirectoryForTree(tree: FileFolderTree,
-                              treePath: string,
-                              indent: number,
-                              name: string,
-                              id?: string): string {
+    treePath: string,
+    indent: number,
+    name: string,
+    id?: string): string {
     const childDirectories = Object.keys(tree)
       .filter((k) => !k.startsWith('__ELECTRON_WIX_MSI'))
       .map((k) => {
@@ -516,19 +508,19 @@ export class MSICreator {
       });
 
     const childRegistry = tree.__ELECTRON_WIX_MSI_REGISTRY__
-    .map((registry) => {
-      const component = this.getRegistryComponent(registry, indent + 2);
-      this.components.push(component);
-      return component.xml;
-    });
+      .map((registry) => {
+        const component = this.getRegistryComponent(registry, indent + 2);
+        this.components.push(component);
+        return component.xml;
+      });
 
     const children: string = [childDirectories.join('\n'),
-      childFiles.join('\n'),
-      childRegistry.length > 0 ? '\n' : '',
-      childRegistry.join('\n')].join('');
+    childFiles.join('\n'),
+    childRegistry.length > 0 ? '\n' : '',
+    childRegistry.join('\n')].join('');
 
     let directoryXml;
-    if(this.nestedFolderName && indent === 8) {
+    if (this.nestedFolderName && indent === 8) {
       directoryXml = replaceInString(this.directoryNestedInstallTemplate, {
         '<!-- {{I}} -->': padStart('', indent),
         '{{DirectoryId}}': id || this.getComponentId(treePath),
@@ -557,10 +549,10 @@ export class MSICreator {
 
     const folderTree = arrayToTree(this.directories, root, this.semanticVersion);
     const fileFolderTree = addFilesToTree(folderTree,
-                                          this.files,
-                                          this.specialFiles,
-                                          this.registry,
-                                          this.semanticVersion);
+      this.files,
+      this.specialFiles,
+      this.registry,
+      this.semanticVersion);
 
     return fileFolderTree;
   }
@@ -580,7 +572,7 @@ export class MSICreator {
         });
 
         return { componentId, xml };
-    });
+      });
   }
 
   /**
@@ -639,7 +631,7 @@ export class MSICreator {
    * @param {value}
    * @returns {xml}
    */
-   private getShortcutProperty(key: string, value: string): string {
+  private getShortcutProperty(key: string, value: string): string {
 
     const xml = replaceInString(this.shortcutPropertyTemplate, {
       '{{ShortcutPropertyKey}}': key,
@@ -679,14 +671,14 @@ export class MSICreator {
       this.icon);
 
     const installInfoFile = createInstallInfoFile(this.manufacturer,
-                                                  this.shortName,
-                                                  this.productCode,
-                                                  this.semanticVersion,
-                                                  this.arch);
+      this.shortName,
+      this.productCode,
+      this.semanticVersion,
+      this.arch);
 
     // inject a stub executable into he root directory since the actual
     // exe has been placed in a versioned sub-folder.
-    specialFiles.push({ name: `${this.exe}.exe`, path:  stubExe});
+    specialFiles.push({ name: `${this.exe}.exe`, path: stubExe });
 
     // injects an information file that helps the installed app to verify info about the installation
     specialFiles.push({ name: `.installInfo.json`, path: installInfoFile });
@@ -695,7 +687,7 @@ export class MSICreator {
       // inject the Squirrel updater into the root directory
       specialFiles.push({
         name: `Update.exe`,
-        path:  path.join(__dirname, '../vendor/msq.exe'),
+        path: path.join(__dirname, '../vendor/msq.exe'),
         featureAffinity: 'autoUpdate'
       });
     }
@@ -723,7 +715,7 @@ export class MSICreator {
     // The following keys are for our uninstall entry because we hiding the original one.
     // This allows us to set permissions in case the auto-updater is installed.
     // if the MSI will be bundled via Burn with other MSI, do not make an individual entry for it
-    if(!this.bundled) {
+    if (!this.bundled) {
       registry.push({
         id: 'UninstallDisplayName',
         root: 'HKMU',

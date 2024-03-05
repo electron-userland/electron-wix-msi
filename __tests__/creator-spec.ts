@@ -12,6 +12,7 @@ import { MSICreator, UIOptions } from '../src/creator';
 import { createStubExe } from '../src/utils/rc-edit';
 import { getMockFileSystem, numberOfFiles, root } from './mocks/mock-fs';
 import { MockSpawn } from './mocks/mock-spawn';
+import { sign } from '@electron/windows-sign';
 
 const mockPassedFs = fs;
 const mockSpawnArgs = {
@@ -47,6 +48,10 @@ describe.skip('creator', () => {
         mockSpawnArgs.options = options;
         return new MockSpawn(name, args, options, mockPassedFs);
       }
+    }));
+
+    jest.mock('@electron/windows-sign', () => ({
+      sign: jest.fn()
     }));
   
     mockFs(getMockFileSystem());
@@ -362,51 +367,18 @@ describe.skip('creator', () => {
     await expect(msiCreator.compile()).rejects.toEqual(expectedErr);
   });
   
-  test('MSICreator compile() tries to sign the MSI with default options', async () => {
-    const certOptions = { certificateFile: 'path/to/file', certificatePassword: 'hi' };
-    const msiCreator = new MSICreator({ ...defaultOptions, ...certOptions });
-  
-    await msiCreator.create();
-    await msiCreator.compile();
-  
-    const expectedCert = path.join(process.cwd(), 'path/to/file');
-    const expectedMsi = path.join(defaultOptions.outputDirectory, 'acme.msi');
-    const expectedArgs = ['sign', '/a', '/f', `${expectedCert}`, '/p', 'hi', `${expectedMsi}`];
-  
-    expect(mockSpawnArgs.name.endsWith('signtool.exe')).toBeTruthy();
-    expect(mockSpawnArgs.args).toEqual(expectedArgs);
-  });
-  
-  test('MSICreator compile() tries to sign the MSI with custom options', async () => {
-    const certOptions = { certificateFile: 'path/to/file', signWithParams: 'hello "how are you"'};
-    const msiCreator = new MSICreator({ ...defaultOptions, ...certOptions });
-  
-    await msiCreator.create();
-    await msiCreator.compile();
-  
-    const expectedMsi = path.join(defaultOptions.outputDirectory, 'acme.msi');
-    const expectedArgs = ['sign', 'hello', '"how are you"', expectedMsi];
-  
-    expect(mockSpawnArgs.name.endsWith('signtool.exe')).toBeTruthy();
-    expect(mockSpawnArgs.args).toEqual(expectedArgs);
-  });
-  
-  test('MSICreator compile() throws if certificateFile is set without certificatePassword', async () => {
-    const certOptions = { certificateFile: 'hello "how are you"'};
-    const msiCreator = new MSICreator({ ...defaultOptions, exe: 'fail-code-signtool', ...certOptions });
-    const expectedErr = new Error('You must provide a certificatePassword with a certificateFile');
-  
-    await msiCreator.create();
-    await expect(msiCreator.compile()).rejects.toEqual(expectedErr);
-  });
-  
   test('MSICreator compile() throws if signing throws', async () => {
-    const certOptions = { certificateFile: 'path/to/file', signWithParams: 'hello "how are you"'};
+    const certOptions = {
+      windowsSign: {
+        signWithParams: 'hello "how are you"'
+      }
+    };
     const msiCreator = new MSICreator({ ...defaultOptions, exe: 'fail-code-signtool', ...certOptions });
-    const expectedErr = new Error(`Signtool exited with code 1. Stderr: A bit of error. Stdout: A bit of data`);
-  
+    const expectedError = new Error('Signing failed');
+    (sign as any).mockRejectedValue(expectedError);
+    
     await msiCreator.create();
-    await expect(msiCreator.compile()).rejects.toEqual(expectedErr);
+    await expect(msiCreator.compile()).rejects.toEqual(expectedError);
   });
   
   test('MSICreator create() creates x86 version by default', async () => {

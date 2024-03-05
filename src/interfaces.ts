@@ -1,3 +1,8 @@
+import { SignToolOptions } from '@electron/windows-sign';
+
+// tslint:disable-next-line
+export interface WindowsSignOptions extends SignToolOptions { };
+
 export type featureAffinity = 'main' | 'autoUpdate' | 'autoLaunch';
 
 export interface StringMap<T> {
