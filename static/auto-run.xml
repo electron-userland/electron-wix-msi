@@ -1,0 +1,4 @@
+    <CustomAction Id="LaunchScriptAfter" Directory="APPLICATIONROOTDIRECTORY" ExeCommand="[SystemFolder]cmd.exe /C start {{ApplicationBinary}}.exe" /> 
+    <InstallExecuteSequence>
+      <Custom Action="LaunchScriptAfter" After="InstallFinalize">NOT REMOVE</Custom>
+    </InstallExecuteSequence>
