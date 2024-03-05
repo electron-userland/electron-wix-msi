@@ -279,7 +279,7 @@ export class MSICreator {
     const updaterComponentRefs = await this.getFeatureComponentRefs('autoUpdate');
     const autoLaunchComponentRefs = await this.getFeatureComponentRefs('autoLaunch');
     let enableChooseDirectory = false;
-    if (typeof this.ui === 'object' && this.ui !== 'null') {
+    if (this.ui && typeof this.ui === 'object') {
       const { chooseDirectory } = this.ui;
       enableChooseDirectory = chooseDirectory || false;
     }
@@ -436,7 +436,7 @@ export class MSICreator {
       xml = this.uiTemplate;
     }
 
-    if (typeof this.ui === 'object' && this.ui !== 'null') {
+    if (this.ui && typeof this.ui === 'object') {
       const { template } = this.ui;
       const variablesXml = this.getUIVariables(this.ui);
       const uiTemplate = template || this.uiTemplate;
