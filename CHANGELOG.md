@@ -4,6 +4,9 @@
    are deprecated but still supported.
  * Updated various dependencies (non-breaking).
  * Upgraded developer dependencies.
+ * Add icon extraction from exe
+ * Associate extensions with exe
+ * Better support for semantic version to Windows version
 
 # 5.0.0
 

@@ -26,6 +26,7 @@
   "dependencies": {
     "@electron/windows-sign": "^1.1.2",
     "debug": "^4.3.4",
+    "exe-icon-extractor": "^1.0.8",
     "fs-extra": "^10.1.0",
     "klaw": "^4.1.0",
     "lodash": "^4.17.21",
