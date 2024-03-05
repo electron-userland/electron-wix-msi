@@ -33,11 +33,11 @@ describe.skip("creator", () => {
     jest.mock("child_process", () => ({
       execSync(name: string) {
         if (name === "node -v") {
-          return new Buffer("8.0.0");
+          return Buffer.from("8.0.0");
         }
 
         if (name === "light -?" || (name === "candle -?" && mockWixInstalled)) {
-          return new Buffer(" version 3.11.0.1701");
+          return Buffer.from(" version 3.11.0.1701");
         }
 
         throw new Error("Command not found");
