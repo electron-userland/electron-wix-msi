@@ -65,6 +65,7 @@ export interface MSICreatorOptions {
   version: string;
   arch?: "x64" | "ia64" | "x86";
   features?: Features | false;
+  autoRun?: boolean;
   defaultInstallMode?: "perUser" | "perMachine";
   rebootMode?: string;
   installLevel?: number;
@@ -121,6 +122,7 @@ export class MSICreator {
   public updaterPermissions = getTemplate("updater-permissions");
   public autoLaunchTemplate = getTemplate("auto-launch-feature", true);
   public shortcutPropertyTemplate = getTemplate("shortcut-property", true);
+  public autoRunTemplate = getTemplate('auto-run',true);
 
   // State, overwritable beteween steps
   public wxsFile: string = "";
@@ -151,6 +153,7 @@ export class MSICreator {
   public autoUpdate: boolean;
   public autoLaunch: boolean;
   public autoLaunchArgs: Array<string>;
+  public autoRun?: boolean; 
   public defaultInstallMode: "perUser" | "perMachine";
   public productCode: string;
   public rebootMode: string;
@@ -209,6 +212,7 @@ export class MSICreator {
     this.ui = options.ui !== undefined ? options.ui : false;
     this.autoUpdate = false;
     this.autoLaunch = false;
+    this.autoRun = options.autoRun || false; 
     this.autoLaunchArgs = [];
     if (typeof options.features === "object" && options.features !== null) {
       this.autoUpdate = options.features.autoUpdate;
@@ -353,6 +357,7 @@ export class MSICreator {
       "<!-- {{AutoLaunchComponentRefs}} -->": autoLaunchComponentRefs
         .map(({ xml }) => xml)
         .join("\n"),
+      "<!-- {{AutoRun}} -->": this.autoRun ? this.autoRunTemplate : "{{remove newline}}",
       "<!-- {{ShortcutProperties}} -->": shortcutProperties
         .map(({ key, value }) => this.getShortcutProperty(key, value))
         .join("\n"),
@@ -872,10 +877,7 @@ export class MSICreator {
       name: "DisplayIcon",
       key: uninstallKey,
       type: "expandable",
-      value:
-        this.arch === "x86"
-          ? "[SystemFolder]msiexec.exe"
-          : "[System64Folder]msiexec.exe",
+      value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe',
       forceDeleteOnUninstall: "yes",
     });
 
