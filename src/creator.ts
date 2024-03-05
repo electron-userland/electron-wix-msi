@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
-import { flatMap, padStart } from 'lodash';
+import { flatMap, padStart, random } from 'lodash';
+import { randomUUID } from 'crypto';
 import * as path from 'path';
-import { v4 as uuid } from 'uuid';
 import { spawnPromise } from './utils/spawn';
 import { sign } from '@electron/windows-sign'
 
@@ -176,12 +176,12 @@ export class MSICreator {
     this.shortName = options.shortName || options.name;
     this.shortcutFolderName = options.shortcutFolderName || options.manufacturer;
     this.shortcutName = options.shortcutName || options.name;
-    this.upgradeCode = options.upgradeCode || uuid();
+    this.upgradeCode = options.upgradeCode || randomUUID();
     this.semanticVersion = options.version;
     this.windowsCompliantVersion = getWindowsCompliantVersion(options.version);
     this.arch = options.arch || 'x86';
     this.defaultInstallMode = options.defaultInstallMode || 'perMachine';
-    this.productCode = uuid().toUpperCase();
+    this.productCode = randomUUID().toUpperCase();
     this.rebootMode = options.rebootMode || 'ReallySuppress';
     this.installLevel = options.installLevel || 2;
     this.bundled = options.bundled || false;
@@ -309,7 +309,7 @@ export class MSICreator {
       '{{ApplicationBinary}}': this.exe,
       '{{ApplicationDescription}}': this.description,
       '{{ApplicationName}}': this.name,
-      '{{ApplicationShortcutGuid}}': uuid(),
+      '{{ApplicationShortcutGuid}}': randomUUID(),
       '{{ApplicationShortName}}': this.shortName,
       '{{AppUserModelId}}': this.appUserModelId,
       '{{Language}}': this.language.toString(10),
@@ -323,12 +323,12 @@ export class MSICreator {
       '{{ProgramFilesFolder}}': this.arch === 'x86' ? 'ProgramFilesFolder' : 'ProgramFiles64Folder',
       '{{ProcessorArchitecture}}': this.arch,
       '{{Win64YesNo}}': this.arch === 'x86' ? 'no' : 'yes',
-      '{{DesktopShortcutGuid}}': uuid(),
+      '{{DesktopShortcutGuid}}': randomUUID(),
       '{{ConfigurableDirectory}}': enableChooseDirectory ? `ConfigurableDirectory="${ROOTDIR_NAME}"` : '',
       '{{PackageScope}}': this.defaultInstallMode,
       '{{InstallPerUser}}': this.defaultInstallMode === 'perUser' ? '1' : '0',
       '{{ProductCode}}': this.productCode,
-      '{{RandomGuid}}': uuid().toString(),
+      '{{RandomGuid}}': randomUUID().toString(),
       '{{RebootMode}}': this.rebootMode,
       '{{InstallLevel}}': this.installLevel.toString(10),
       '\r?\n.*{{remove newline}}': ''
@@ -582,7 +582,7 @@ export class MSICreator {
    * @returns {RegistryComponent}
    */
   private getFileComponent(file: File, indent: number): FileComponent {
-    const guid = uuid();
+    const guid = randomUUID();
     const componentId = this.getComponentId(file.path);
     const xml = replaceInString(this.fileComponentTemplate, {
       '<!-- {{I}} -->': padStart('', indent),
@@ -603,7 +603,7 @@ export class MSICreator {
    * @returns {RegistryComponent}
    */
   private getRegistryComponent(registry: Registry, indent: number): Component {
-    const guid = uuid();
+    const guid = randomUUID();
     const permissionXml = registry.permission ? replaceInString(this.permissionTemplate, {
       '{{User}}': registry.permission.user,
       '{{GenericAll}}': registry.permission.genericAll,
@@ -654,7 +654,7 @@ export class MSICreator {
     const pathPart = pathId.length > 34
       ? path.basename(filePath).slice(0, 34)
       : pathId;
-    const uniqueId = `_${pathPart}_${uuid()}`;
+    const uniqueId = `_${pathPart}_${randomUUID()}`;
 
     return uniqueId.replace(/[^A-Za-z0-9_\.]/g, '_');
   }
