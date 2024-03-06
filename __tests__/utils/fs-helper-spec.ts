@@ -38,41 +38,40 @@ const tests = [
   },
 ];
 
-describe.skip("fs-helper", () => {
-  beforeAll(() => {
-    // console.log call needed as workaround to make jest work with mock-fs
-    console.log("");
-    getMockFileSystem();
-    mockFs(getMockFileSystem());
-  });
+beforeEach(() => {
+  getMockFileSystem();
+  mockFs(getMockFileSystem());
+});
 
-  afterAll(() => {
-    mockFs.restore();
-    process.env.TEMP = originalTmp;
-  });
+afterAll(() => {
+  process.env.TEMP = originalTmp;
+});
 
-  tests.forEach((config) => {
-    it(`gets a temp file path (case:${config.case})`, () => {
-      overridePlatform(config.platform);
-      if (config.TEMP) {
-        process.env.TEMP = config.TEMP;
-      } else {
-        delete process.env.TEMP;
-      }
-      if (config.TMPDIR) {
-        process.env.TMPDIR = config.TMPDIR;
-      } else {
-        delete process.env.TMPDIR;
-      }
-      const S2 = process.platform === "win32" ? "\\" : "/";
-      mkdtempSyncMock.mockReturnValueOnce(getTempPath() + `${S2}helloXXXX`);
+afterEach(() => {
+  mockFs.restore();
+});
 
-      const { tempFolderPath, tempFilePath } = getTempFilePath("hello", "exe");
+tests.forEach((config) => {
+  it(`gets a temp file path (case:${config.case})`, () => {
+    overridePlatform(config.platform);
+    if (config.TEMP) {
+      process.env.TEMP = config.TEMP;
+    } else {
+      delete process.env.TEMP;
+    }
+    if (config.TMPDIR) {
+      process.env.TMPDIR = config.TMPDIR;
+    } else {
+      delete process.env.TMPDIR;
+    }
+    const S2 = process.platform === "win32" ? "\\" : "/";
+    mkdtempSyncMock.mockReturnValueOnce(getTempPath() + `${S2}helloXXXX`);
 
-      expect(tempFilePath.startsWith(tempFolderPath)).toBeTruthy();
-      const rx = new RegExp(config.regex);
-      expect(rx.test(tempFilePath)).toBeTruthy();
-      resetPlatform();
-    });
+    const { tempFolderPath, tempFilePath } = getTempFilePath("hello", "exe");
+
+    expect(tempFilePath.startsWith(tempFolderPath)).toBeTruthy();
+    const rx = new RegExp(config.regex);
+    expect(rx.test(tempFilePath)).toBeTruthy();
+    resetPlatform();
   });
 });

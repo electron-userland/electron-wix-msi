@@ -1,0 +1,14 @@
+<!-- {{I}} --><!-- Capabilities keys for Vista/7+ "Set Program Access and Defaults" -->
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\{{ShortAppName}}\Capabilities\FileAssociations" Name=".{{ext}}" Value="{{ShortAppName}}.{{ext}}" Type="string" />
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\{{ShortAppName}}\Capabilities\MIMEAssociations" Name="application/{{ext}}" Value="{{ShortAppName}}.{{ext}}" Type="string" />
+<!-- {{I}} --><!-- Extend to the "open with" list + Win7+ jump menu pinning  -->
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\{{ApplicationBinary}}.exe\SupportedTypes" Name=".{{ext}}" Value="" Type="string" />
+<!-- {{I}} -->
+<!-- {{I}} --><!-- {{ShortAppName}}.Document ProgID -->
+<!-- {{I}} --><RegistryValue Root="HKLM" Key="SOFTWARE\Classes\{{ShortAppName}}.{{ext}}" Name="FriendlyTypeName" Value="{{ApplicationName}} {{ext}} File" Type="string" />
+<!-- {{I}} --><ProgId Id="{{ShortAppName}}.{{ext}}" Description="{{ApplicationName}} {{ext}} File" Icon="{{IconId}}" IconIndex="0" Advertise="yes">
+<!-- {{I}} -->    <Extension Id="{{ext}}">
+<!-- {{I}} -->        <Verb Id="open" Command="Open {{ext}}" Argument="&quot;%1&quot;" />
+<!-- {{I}} -->        <MIME Advertise="yes" ContentType="application/{{ext}}" Default="yes" />
+<!-- {{I}} -->    </Extension>
+<!-- {{I}} --></ProgId>

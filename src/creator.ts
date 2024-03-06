@@ -69,6 +69,7 @@ export interface MSICreatorOptions {
   defaultInstallMode?: "perUser" | "perMachine";
   rebootMode?: string;
   installLevel?: number;
+  associateExtensions?: string;
   bundled?: boolean;
   windowsSign?: WindowsSignOptions;
   // Deprecated, use windowsSign instead
@@ -122,7 +123,10 @@ export class MSICreator {
   public updaterPermissions = getTemplate("updater-permissions");
   public autoLaunchTemplate = getTemplate("auto-launch-feature", true);
   public shortcutPropertyTemplate = getTemplate("shortcut-property", true);
-  public autoRunTemplate = getTemplate('auto-run',true);
+  public autoRunTemplate = getTemplate("auto-run", true);
+  public fileAssociationHeaderTemplate = getTemplate("file-association-header");
+  public fileAssociationTemplate = getTemplate("file-association");
+  public iconTemplate = getTemplate("icon");
 
   // State, overwritable beteween steps
   public wxsFile: string = "";
@@ -153,11 +157,13 @@ export class MSICreator {
   public autoUpdate: boolean;
   public autoLaunch: boolean;
   public autoLaunchArgs: Array<string>;
-  public autoRun?: boolean; 
+  public autoRun?: boolean;
   public defaultInstallMode: "perUser" | "perMachine";
   public productCode: string;
   public rebootMode: string;
   public installLevel: number;
+  public hasAssociateExtensions: boolean;
+  public associateExtensions?: string;
   public bundled: boolean;
   public windowsSign?: WindowsSignOptions;
 
@@ -169,11 +175,16 @@ export class MSICreator {
   private registry: Array<Registry> = [];
   private tree: FileFolderTree | undefined;
   private components: Array<Component> = [];
+  private exeFilename: string;
+  private exeFilePath: string;
 
   constructor(options: MSICreatorOptions) {
     this.appDirectory = path.normalize(options.appDirectory);
     this.description = options.description;
     this.exe = options.exe.replace(/\.exe$/, "");
+    this.exeFilename = this.exe + ".exe";
+    this.exeFilePath =
+      this.appDirectory.replace(/[/\\]$/, "") + path.sep + this.exeFilename;
     this.icon = options.icon;
     this.extensions = options.extensions || [];
     this.lightSwitches = options.lightSwitches || [];
@@ -197,6 +208,8 @@ export class MSICreator {
     this.productCode = randomUUID().toUpperCase();
     this.rebootMode = options.rebootMode || "ReallySuppress";
     this.installLevel = options.installLevel || 2;
+    this.hasAssociateExtensions = options.associateExtensions !== undefined;
+    this.associateExtensions = options.associateExtensions;
     this.bundled = options.bundled || false;
     this.windowsSign = options.windowsSign || {
       signWithParams: options.signWithParams,
@@ -212,7 +225,7 @@ export class MSICreator {
     this.ui = options.ui !== undefined ? options.ui : false;
     this.autoUpdate = false;
     this.autoLaunch = false;
-    this.autoRun = options.autoRun || false; 
+    this.autoRun = options.autoRun || false;
     this.autoLaunchArgs = [];
     if (typeof options.features === "object" && options.features !== null) {
       this.autoUpdate = options.features.autoUpdate;
@@ -341,6 +354,7 @@ export class MSICreator {
         .map(({ xml }) => xml)
         .join("\n"),
       "<!-- {{Directories}} -->": directories,
+      "<!-- {{Icon}}-->": this.getIcon(),
       "<!-- {{UI}} -->": this.getUI(),
       "<!-- {{AutoUpdatePermissions}} -->": this.autoUpdate
         ? this.updaterPermissions
@@ -357,7 +371,9 @@ export class MSICreator {
       "<!-- {{AutoLaunchComponentRefs}} -->": autoLaunchComponentRefs
         .map(({ xml }) => xml)
         .join("\n"),
-      "<!-- {{AutoRun}} -->": this.autoRun ? this.autoRunTemplate : "{{remove newline}}",
+      "<!-- {{AutoRun}} -->": this.autoRun
+        ? this.autoRunTemplate
+        : "{{remove newline}}",
       "<!-- {{ShortcutProperties}} -->": shortcutProperties
         .map(({ key, value }) => this.getShortcutProperty(key, value))
         .join("\n"),
@@ -498,6 +514,21 @@ export class MSICreator {
     } else {
       debug("Signing not necessary, no windowsSign given");
     }
+  }
+
+  private getIcon(): string {
+    let xml = "";
+    const iconPath = this.icon || this.exeFilePath;
+
+    if (this.hasAssociateExtensions) {
+      xml = replaceInString(this.iconTemplate, {
+        "<!-- {{I}} -->": "    ",
+        "{{IconId}}": "AppIcon.ico",
+        "{{IconSource}}": iconPath,
+      });
+    }
+
+    return xml;
   }
 
   /**
@@ -671,6 +702,10 @@ export class MSICreator {
   private getFileComponent(file: File, indent: number): FileComponent {
     const guid = randomUUID();
     const componentId = this.getComponentId(file.path);
+    let extensionAssociation = "";
+    if (this.hasAssociateExtensions && file.path === this.exeFilePath) {
+      extensionAssociation = this.getExtensionAssociation(indent + 2);
+    }
     const xml = replaceInString(this.fileComponentTemplate, {
       "<!-- {{I}} -->": padStart("", indent),
       "{{ComponentId}}": componentId,
@@ -678,6 +713,7 @@ export class MSICreator {
       "{{Name}}": file.name,
       "{{Guid}}": guid,
       "{{SourcePath}}": file.path,
+      "<!-- {{ExtensionAssociation}} -->": extensionAssociation,
     });
 
     return {
@@ -687,6 +723,43 @@ export class MSICreator {
       file,
       featureAffinity: file.featureAffinity || "main",
     };
+  }
+
+  private getExtensionAssociation(indent: number): string {
+    const shortAppName = this.exe.replace(/[^A-Za-z0-9]/g, "");
+    const xml =
+      replaceInString(this.fileAssociationHeaderTemplate, {
+        "<!-- {{I}} -->": padStart("", indent),
+        "{{ApplicationDescription}}": this.name,
+        "{{ApplicationBinary}}": this.exe,
+        "{{ApplicationName}}": this.name,
+        "{{ShortAppName}}": shortAppName,
+      }) + this.getExtensionAssociationList(indent, shortAppName).join("\n");
+
+    return xml;
+  }
+
+  private getExtensionAssociationList(
+    indent: number,
+    shortAppName: string,
+  ): Array<string> {
+    if (this.associateExtensions === undefined) {
+      return [""];
+    }
+    const extList = this.associateExtensions.replace(".", "").split(/[,;]/);
+    return extList.map((ext) => {
+      const xml = replaceInString(this.fileAssociationTemplate, {
+        "<!-- {{I}} -->": padStart("", indent),
+        "{{ApplicationDescription}}": this.name,
+        "{{ApplicationBinary}}": this.exe,
+        "{{ApplicationName}}": this.name,
+        "{{ShortAppName}}": shortAppName,
+        "{{IconId}}": "AppIcon.ico",
+        "{{ext}}": ext,
+      });
+
+      return xml;
+    });
   }
 
   /**
@@ -769,6 +842,8 @@ export class MSICreator {
       this.windowsCompliantVersion,
       this.icon,
     );
+
+    this.exeFilePath = stubExe;
 
     const installInfoFile = createInstallInfoFile(
       this.manufacturer,
@@ -877,7 +952,7 @@ export class MSICreator {
       name: "DisplayIcon",
       key: uninstallKey,
       type: "expandable",
-      value: '[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe',
+      value: "[APPLICATIONROOTDIRECTORY]{{ApplicationBinary}}.exe",
       forceDeleteOnUninstall: "yes",
     });
 

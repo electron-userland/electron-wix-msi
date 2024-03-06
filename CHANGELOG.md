@@ -1,3 +1,14 @@
+# 5.1.0
+ * Feature: Codesigning can now be performed with the `windowsSign` property and will
+   be performed by `@electron/windows-sign`. Existing codesign properties
+   are deprecated but still supported.
+ * Feature: Associate extensions with exe (thanks to @lafleurh).
+ * Fix: Better support for semantic version to Windows version (thanks to @lafleurh).
+ * Updated various dependencies (non-breaking).
+ * Upgraded developer dependencies.
+
+# 5.0.0
+
 # 4.0.0
  * Breaking: Upgraded dependencies, now requiring Node v14+
  * Add localization support
