@@ -19,7 +19,7 @@ function isWindowsCompliant(version: string): boolean {
 }
 
 function getBuildNumber(version: semver.SemVer): string {
-  let ret = '0';
+  let ret = "0";
 
   if (version) {
     if (version.build) {
@@ -44,7 +44,7 @@ function getBuildNumber(version: semver.SemVer): string {
  * @returns {string}
  */
 export function getWindowsCompliantVersion(input: string): string {
-  const winVer = input.replace('+', '.');
+  const winVer = input.replace("+", ".");
   if (isWindowsCompliant(winVer)) {
     return winVer;
   }
