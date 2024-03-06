@@ -43,7 +43,7 @@ interface RcInfo {
 
 function getExtractIcon(): (_: string, __: string) => Buffer {
   if (process.platform === "win32") {
-    return require("exe-icon-extractor").extractIcon;
+    return require("@bitdisaster/exe-icon-extractor").extractIcon;
   } else {
     return () => {
       throw new Error("Not implemented");
