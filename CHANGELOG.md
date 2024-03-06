@@ -1,3 +1,6 @@
+# 5.1.2
+ * Fix: Require correct exe-icon-extractor package
+
 # 5.1.0
  * Feature: Codesigning can now be performed with the `windowsSign` property and will
    be performed by `@electron/windows-sign`. Existing codesign properties
