@@ -16,7 +16,7 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "scripts": {
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
     "build": "tsc --pretty",
     "test": "npm run lint && jest",
     "lint": "eslint .",
