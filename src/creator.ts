@@ -211,11 +211,6 @@ export class MSICreator {
     this.hasAssociateExtensions = options.associateExtensions !== undefined;
     this.associateExtensions = options.associateExtensions;
     this.bundled = options.bundled || false;
-    this.windowsSign = options.windowsSign || {
-      signWithParams: options.signWithParams,
-      certificateFile: options.certificateFile,
-      certificatePassword: options.certificatePassword,
-    };
 
     this.appUserModelId =
       options.appUserModelId ||
@@ -227,6 +222,7 @@ export class MSICreator {
     this.autoLaunch = false;
     this.autoRun = options.autoRun || false;
     this.autoLaunchArgs = [];
+
     if (typeof options.features === "object" && options.features !== null) {
       this.autoUpdate = options.features.autoUpdate;
       if (
@@ -238,6 +234,20 @@ export class MSICreator {
       } else {
         this.autoLaunch = options.features.autoLaunch;
       }
+    }
+
+    if (options.windowsSign) {
+      this.windowsSign = options.windowsSign;
+    } else if (
+      options.signWithParams ||
+      options.certificateFile ||
+      options.certificatePassword
+    ) {
+      this.windowsSign = {
+        signWithParams: options.signWithParams,
+        certificateFile: options.certificateFile,
+        certificatePassword: options.certificatePassword,
+      };
     }
   }
 
