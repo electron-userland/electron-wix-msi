@@ -1,3 +1,6 @@
+# 5.1.3
+ * Fix: Only set `windowsSign` if indicated
+
 # 5.1.2
  * Fix: Require correct exe-icon-extractor package
 
