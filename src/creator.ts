@@ -491,6 +491,9 @@ export class MSICreator {
     if (type === "msi" && this.lightSwitches) {
       this.lightSwitches.forEach((param) => preArgs.unshift(param));
     }
+    if (type === "wixobj") {
+      preArgs.push("-arch", this.arch);
+    }
 
     const { code, stderr, stdout } = await spawnPromise(
       binary,
