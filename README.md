@@ -115,7 +115,7 @@ await msiCreator.compile();
   `msi` as well as the intermediate files .`wxs` and `.wixobj`.
 * `exe` (string) - The name of the exe.
 * `description` (string) - The app's description.
-* `version` (string) - The app's version.
+* `version` (string) - The app's version. Must be a valid semantic version.
 * `name` (string) - The app's name.
 * `icon` 🆕 (string, optional) - A path to the Apps icon used for the stub executable.
    If not provided a lower quality version will be extracted form the `exe`

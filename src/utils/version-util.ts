@@ -54,8 +54,31 @@ export function getWindowsCompliantVersion(input: string): string {
     const build = getBuildNumber(parsed);
     return `${parsed.major}.${parsed.minor}.${parsed.patch}.${build}`;
   } else {
-    throw new Error("Could not parse semantic version input string");
+    throw new Error(`Could not parse semantic version input string: ${input}`);
   }
+}
+
+/**
+ * Takes a version number and returns a semantic version if possible.
+ * (1.2.3.4 -> 1.2.3+4)
+ * @param {string} input
+ * @returns {string}
+ */
+export function getSemanticVersion(input: string): string {
+  if (semver.valid(input)) {
+    return input;
+  }
+
+  const parsed = input.split(".");
+  // If build number is different
+  if (parsed.length === 4) {
+    const inputWithBuild = `${parsed[0]}.${parsed[1]}.${parsed[2]}+${parsed[3]}`;
+    if (semver.valid(inputWithBuild)) {
+      return inputWithBuild;
+    }
+  }
+
+  throw new Error(`Could not parse semantic version input string: ${input}`);
 }
 
 export function createInstallInfoFile(

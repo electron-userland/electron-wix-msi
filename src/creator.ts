@@ -22,6 +22,7 @@ import { createStubExe } from "./utils/rc-edit";
 import { replaceInString, replaceToFile } from "./utils/replace";
 import {
   createInstallInfoFile,
+  getSemanticVersion,
   getWindowsCompliantVersion,
 } from "./utils/version-util";
 import { getDirectoryStructure } from "./utils/walker";
@@ -201,7 +202,7 @@ export class MSICreator {
       options.shortcutFolderName || options.manufacturer;
     this.shortcutName = options.shortcutName || options.name;
     this.upgradeCode = options.upgradeCode || randomUUID();
-    this.semanticVersion = options.version;
+    this.semanticVersion = getSemanticVersion(options.version);
     this.windowsCompliantVersion = getWindowsCompliantVersion(options.version);
     this.arch = options.arch || "x86";
     this.defaultInstallMode = options.defaultInstallMode || "perMachine";
