@@ -14,7 +14,7 @@ import { Component,
          StringMap } from './interfaces';
 import { addFilesToTree, arrayToTree } from './utils/array-to-tree';
 import { hasCandle, hasLight } from './utils/detect-wix';
-import { createStubExe } from './utils/rc-edit';
+import { createStubExe, getAzureTrustedSigningOptions } from './utils/rc-edit';
 import { replaceInString, replaceToFile } from './utils/replace';
 import { createInstallInfoFile, getWindowsCompliantVersion } from './utils/version-util';
 import { getDirectoryStructure } from './utils/walker';
@@ -250,6 +250,7 @@ export class MSICreator {
     }
 
     const { wixobjFile } = await this.createWixobj();
+    await this.SignExe();
     const { msiFile } = await this.createMsi();
     await this.signMSI(msiFile);
 
@@ -329,6 +330,35 @@ export class MSICreator {
     const output = await replaceToFile(completeTemplate, target, replacements);
 
     return { wxsFile: target, wxsContent: output };
+  }
+
+  public async SignExe(): Promise<void> {
+    const signToolPath = 'C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x64\\signtool.exe';
+    const exePath = path.join(this.outputDirectory, `${this.exe}.exe`);
+    const azureOptions = getAzureTrustedSigningOptions();
+    const targets: Array<string> = [];
+
+    if (fs.existsSync(exePath)) {
+      targets.push(exePath);
+    }
+    const specialExe = (this as any).specialFiles?.find((f: any) =>
+      f && f.name && f.name.toLowerCase() === `${this.exe.toLowerCase()}.exe`);
+    if (specialExe && specialExe.path && fs.existsSync(specialExe.path)) {
+      targets.push(specialExe.path);
+    }
+    if (targets.length === 0) {
+      return;
+    }
+    for (const target of targets) {
+      //console.log(`electron-wix-msi: Assinando EXE com Microsoft Trusted Signing: ${target}`);
+      const { code, stderr, stdout } = await spawnPromise(signToolPath, ['sign', ...azureOptions, target], {
+        env: process.env
+      });
+      if (code !== 0) {
+        throw new Error(`Signtool (EXE) saiu com código ${code}. Stderr: ${stderr}. Stdout: ${stdout}`);
+      }
+      //console.log(`electron-wix-msi: Assinatura do EXE concluída com sucesso: ${target}`);
+    }
   }
 
   /**
@@ -677,6 +707,14 @@ export class MSICreator {
       this.description,
       this.windowsCompliantVersion,
       this.icon);
+
+    try {
+      const outExePath = path.join(this.outputDirectory, `${this.exe}.exe`);
+      await fs.ensureDir(this.outputDirectory);
+      await fs.copyFile(stubExe, outExePath);
+    } catch (copyErr: any) {
+      console.warn(`electron-wix-msi: Não foi possível copiar o StubExecutable para outputDirectory para assinatura: ${copyErr}`);
+    }
 
     const installInfoFile = createInstallInfoFile(this.manufacturer,
                                                   this.shortName,

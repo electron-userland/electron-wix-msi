@@ -4,6 +4,12 @@ import * as rcedit from 'rcedit';
 import * as rcinfo from 'rcinfo';
 import { getTempFilePath } from './fs-helper';
 
+export function getAzureTrustedSigningOptions(): Array<string> {
+  const userProfile = process.env.USERPROFILE || '';
+  const dlib = path.join(userProfile, 'AppData\\Local\\Microsoft\\MicrosoftTrustedSigningClientTools\\Azure.CodeSigning.Dlib.dll');
+  const metadataFile = 'Codesign\\metadata.json';
+  return ['/v', '/debug', '/fd', 'SHA256', '/tr', 'http://timestamp.acs.microsoft.com', '/td', 'SHA256', '/dlib', dlib, '/dmdf', metadataFile];
+}
 
 interface RcInfo {
   'version-string': {
