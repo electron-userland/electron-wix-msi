@@ -148,7 +148,7 @@ await msiCreator.compile();
 * `ui` (UIOptions, optional) - Enables configuration of the UI. See below for
   more information.
 * `arch` (string, optional) - Defines the architecture the MSI is build for. Values can
-  be either `x86` or `x64`. Default's to `x86` if left undefined.
+  be either `x86`, `x64` or `arm64`. Default's to `x86` if left undefined.
 * `features` 🆕 (Feature , optional) - Enables/disables features that will be built-in 
   to the MSI `autoUpdate: boolean` and `autoLaunch: boolean`. These features will be
   then selectable by the end-user during the installation.

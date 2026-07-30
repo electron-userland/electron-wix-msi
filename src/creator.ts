@@ -63,7 +63,7 @@ export interface MSICreatorOptions {
   ui?: UIOptions | boolean;
   upgradeCode?: string;
   version: string;
-  arch?: "x64" | "ia64" | "x86";
+  arch?: "x64" | "ia64" | "x86" | "arm64";
   features?: Features | false;
   autoRun?: boolean;
   defaultInstallMode?: "perUser" | "perMachine";
@@ -153,7 +153,7 @@ export class MSICreator {
   public upgradeCode: string;
   public windowsCompliantVersion: string;
   public semanticVersion: string;
-  public arch: "x64" | "ia64" | "x86" = "x86";
+  public arch: "x64" | "ia64" | "x86" | "arm64" = "x86";
   public autoUpdate: boolean;
   public autoLaunch: boolean;
   public autoLaunchArgs: Array<string>;

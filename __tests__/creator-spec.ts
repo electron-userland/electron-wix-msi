@@ -494,6 +494,20 @@ testIncludes(
   'ProcessorArchitecture="x64"',
 );
 
+test("MSICreator create() creates arm64 version", async () => {
+  const msiCreator = new MSICreator({ ...defaultOptions, arch: "arm64" });
+
+  const { wxsFile } = await msiCreator.create();
+  wxsContent = await fs.readFile(wxsFile, "utf-8");
+  expect(wxsFile).toBeTruthy();
+});
+testIncludes("32 bit package declaration", 'Platform="arm64"');
+testIncludes("32 bit component declarations", 'Win64="yes"');
+testIncludes(
+  "32 bit file architecture declaration",
+  'ProcessorArchitecture="arm64"',
+);
+
 test("MSICreator create() creates ia64 version", async () => {
   const msiCreator = new MSICreator({ ...defaultOptions, arch: "ia64" });
 
